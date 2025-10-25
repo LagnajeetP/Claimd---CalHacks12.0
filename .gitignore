@@ -1,2 +1,4 @@
 .vscode
-/backend/api/__pycache__/
+__pycache__/
+.DS_Store
+frontend/node_modules
