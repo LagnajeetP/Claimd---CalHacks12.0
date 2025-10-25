@@ -71,6 +71,87 @@ def create_general_applicant_info_pdf(applicant_info: Dict[str, Any]) -> bytes:
     buffer.seek(0)
     return buffer.getvalue()
 
+def create_local_storage_directory():
+    """
+    Create local storage directory for files if it doesn't exist
+    """
+    storage_dir = "/Users/sanjaysundaram/vs_code/calhacksy1/backend/local_storage"
+    os.makedirs(storage_dir, exist_ok=True)
+    os.makedirs(f"{storage_dir}/pdfs", exist_ok=True)
+    os.makedirs(f"{storage_dir}/metadata", exist_ok=True)
+    return storage_dir
+
+def write_pdf_to_local_storage(pdf_content: bytes, filename: str, collection_name: str = "ssda_documents") -> str:
+    """
+    Write PDF content to local storage (backup when MongoDB fails)
+    
+    Args:
+        pdf_content: PDF content as bytes
+        filename: Name of the file
+        collection_name: Collection name (used as subdirectory)
+    
+    Returns:
+        Local file path
+    """
+    try:
+        storage_dir = create_local_storage_directory()
+        collection_dir = f"{storage_dir}/pdfs/{collection_name}"
+        os.makedirs(collection_dir, exist_ok=True)
+        
+        # Create unique filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_name = os.path.splitext(filename)[0]
+        extension = os.path.splitext(filename)[1]
+        unique_filename = f"{base_name}_{timestamp}{extension}"
+        file_path = os.path.join(collection_dir, unique_filename)
+        
+        # Write PDF content to file
+        with open(file_path, 'wb') as f:
+            f.write(pdf_content)
+        
+        # Create metadata file
+        metadata = {
+            "filename": filename,
+            "unique_filename": unique_filename,
+            "collection": collection_name,
+            "timestamp": datetime.now().isoformat(),
+            "file_size": len(pdf_content),
+            "file_path": file_path
+        }
+        
+        metadata_file = f"{storage_dir}/metadata/{base_name}_{timestamp}.json"
+        with open(metadata_file, 'w') as f:
+            json.dump(metadata, f, indent=2)
+        
+        print(f"PDF saved to local storage: {file_path}")
+        return file_path
+        
+    except Exception as e:
+        print(f"Error writing to local storage: {e}")
+        return None
+
+def write_multiple_pdfs_to_local_storage(pdf_contents: List[Dict[str, Any]], collection_name: str = "ssda_documents") -> List[str]:
+    """
+    Write multiple PDFs to local storage
+    
+    Args:
+        pdf_contents: List of dictionaries with 'content' and 'filename' keys
+        collection_name: Collection name
+    
+    Returns:
+        List of local file paths
+    """
+    file_paths = []
+    for pdf_data in pdf_contents:
+        file_path = write_pdf_to_local_storage(
+            pdf_data['content'], 
+            pdf_data['filename'], 
+            collection_name
+        )
+        if file_path:
+            file_paths.append(file_path)
+    return file_paths
+
 def connect_to_mongodb() -> MongoClient:
     """
     Connect to MongoDB using the provided URI
@@ -79,29 +160,92 @@ def connect_to_mongodb() -> MongoClient:
         MongoDB client
     """
     mongo_uri = "mongodb+srv://potthi:uD90Z4zvmQkhwUY0@main.vys4uml.mongodb.net/?appName=Main"
+    
+    # Try multiple connection methods
+    connection_methods = [
+        # Method 1: Basic connection
+        {
+            "name": "Basic connection",
+            "params": {
+                "serverSelectionTimeoutMS": 10000,
+                "connectTimeoutMS": 10000,
+                "socketTimeoutMS": 10000,
+                "retryWrites": True,
+                "retryReads": True
+            }
+        },
+        # Method 2: With TLS but no invalid certs
+        {
+            "name": "TLS connection",
+            "params": {
+                "tls": True,
+                "serverSelectionTimeoutMS": 10000,
+                "connectTimeoutMS": 10000,
+                "socketTimeoutMS": 10000,
+                "retryWrites": True,
+                "retryReads": True
+            }
+        },
+        # Method 3: Allow invalid certificates
+        {
+            "name": "TLS with invalid certs allowed",
+            "params": {
+                "tls": True,
+                "tlsAllowInvalidCertificates": True,
+                "serverSelectionTimeoutMS": 10000,
+                "connectTimeoutMS": 10000,
+                "socketTimeoutMS": 10000,
+                "retryWrites": True,
+                "retryReads": True
+            }
+        }
+    ]
+    
+    for method in connection_methods:
+        try:
+            print(f"Trying {method['name']}...")
+            client = MongoClient(mongo_uri, **method['params'])
+            # Test the connection
+            client.admin.command('ping')
+            print(f"Successfully connected to MongoDB using {method['name']}!")
+            return client
+        except Exception as e:
+            print(f"{method['name']} failed: {e}")
+            continue
+    
+    print("All connection methods failed. Using mock client for testing...")
+    return None
+
+def test_mongodb_connection() -> bool:
+    """
+    Test MongoDB connection and return True if successful
+    
+    Returns:
+        True if connection successful, False otherwise
+    """
     try:
-        # Add SSL configuration to handle connection issues
-        client = MongoClient(
-            mongo_uri,
-            tls=True,
-            tlsAllowInvalidCertificates=True,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
-            socketTimeoutMS=5000
-        )
-        # Test the connection
-        client.admin.command('ping')
-        print("Successfully connected to MongoDB!")
-        return client
+        client = connect_to_mongodb()
+        if client is None:
+            return False
+        
+        # Test a simple operation
+        db = client.ssda_database
+        collection = db["connection_test"]
+        test_doc = {"test": True, "timestamp": datetime.now()}
+        result = collection.insert_one(test_doc)
+        
+        # Clean up test document
+        collection.delete_one({"_id": result.inserted_id})
+        
+        print("MongoDB connection test successful!")
+        return True
     except Exception as e:
-        print(f"Failed to connect to MongoDB: {e}")
-        # Return a mock client for testing purposes
-        print("Using mock client for testing...")
-        return None
+        print(f"MongoDB connection test failed: {e}")
+        return False
 
 def write_pdf_to_mongodb(pdf_content: bytes, filename: str, collection_name: str = "ssda_documents") -> str:
     """
-    Write PDF content to MongoDB
+    Write PDF content to MongoDB with local storage fallback
     
     Args:
         pdf_content: PDF content as bytes
@@ -109,15 +253,15 @@ def write_pdf_to_mongodb(pdf_content: bytes, filename: str, collection_name: str
         collection_name: MongoDB collection name
         
     Returns:
-        Document ID from MongoDB
+        Document ID from MongoDB or local file path
     """
     try:
         client = connect_to_mongodb()
         if client is None:
-            # Mock response for testing
-            mock_id = f"mock_{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            print(f"Mock upload: {filename} would be uploaded to MongoDB with ID: {mock_id}")
-            return mock_id
+            # Fallback to local storage
+            print("MongoDB unavailable, using local storage...")
+            local_path = write_pdf_to_local_storage(pdf_content, filename, collection_name)
+            return local_path or f"local_{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             
         db = client.ssda_database
         collection = db[collection_name]
@@ -138,10 +282,10 @@ def write_pdf_to_mongodb(pdf_content: bytes, filename: str, collection_name: str
         
     except Exception as e:
         print(f"Error writing PDF to MongoDB: {e}")
-        # Return mock ID for testing
-        mock_id = f"mock_{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        print(f"Mock upload: {filename} would be uploaded to MongoDB with ID: {mock_id}")
-        return mock_id
+        # Fallback to local storage
+        print("Falling back to local storage...")
+        local_path = write_pdf_to_local_storage(pdf_content, filename, collection_name)
+        return local_path or f"local_{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
 def write_multiple_pdfs_to_mongodb(pdf_files: List[Dict[str, Any]], collection_name: str = "ssda_documents") -> List[str]:
     """
@@ -157,13 +301,9 @@ def write_multiple_pdfs_to_mongodb(pdf_files: List[Dict[str, Any]], collection_n
     try:
         client = connect_to_mongodb()
         if client is None:
-            # Mock response for testing
-            mock_ids = []
-            for pdf_file in pdf_files:
-                mock_id = f"mock_{pdf_file['filename']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                mock_ids.append(mock_id)
-                print(f"Mock upload: {pdf_file['filename']} would be uploaded to MongoDB with ID: {mock_id}")
-            return mock_ids
+            # Fallback to local storage
+            print("MongoDB unavailable, using local storage for multiple PDFs...")
+            return write_multiple_pdfs_to_local_storage(pdf_files, collection_name)
             
         db = client.ssda_database
         collection = db[collection_name]
@@ -186,13 +326,9 @@ def write_multiple_pdfs_to_mongodb(pdf_files: List[Dict[str, Any]], collection_n
         
     except Exception as e:
         print(f"Error writing PDFs to MongoDB: {e}")
-        # Return mock IDs for testing
-        mock_ids = []
-        for pdf_file in pdf_files:
-            mock_id = f"mock_{pdf_file['filename']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            mock_ids.append(mock_id)
-            print(f"Mock upload: {pdf_file['filename']} would be uploaded to MongoDB with ID: {mock_id}")
-        return mock_ids
+        # Fallback to local storage
+        print("Falling back to local storage for multiple PDFs...")
+        return write_multiple_pdfs_to_local_storage(pdf_files, collection_name)
 
 def process_applicant_documents(applicant_info: Dict[str, Any], 
                               financial_pdf_path: str = None, 
@@ -333,7 +469,7 @@ async def process_multistep_form_data(
         print("Uploading PDFs to MongoDB...")
         document_ids = write_multiple_pdfs_to_mongodb(pdf_files)
         
-        # Also store the form data in MongoDB for reference
+        # Also store the form data for reference (MongoDB or local storage)
         try:
             client = connect_to_mongodb()
             if client:
@@ -349,8 +485,24 @@ async def process_multistep_form_data(
                 
                 form_result = form_collection.insert_one(form_document)
                 print(f"Form data stored in MongoDB with ID: {form_result.inserted_id}")
+            else:
+                # Store form data locally as JSON
+                storage_dir = create_local_storage_directory()
+                form_data_file = f"{storage_dir}/metadata/form_submission_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                
+                form_document = {
+                    "applicant_info": applicant_info,
+                    "submission_date": datetime.now().isoformat(),
+                    "pdf_document_ids": document_ids,
+                    "files_uploaded": [pdf['filename'] for pdf in pdf_files]
+                }
+                
+                with open(form_data_file, 'w') as f:
+                    json.dump(form_document, f, indent=2, default=str)
+                
+                print(f"Form data stored locally: {form_data_file}")
         except Exception as e:
-            print(f"Warning: Could not store form data in MongoDB: {e}")
+            print(f"Warning: Could not store form data: {e}")
         
         return {
             "success": True,
@@ -470,6 +622,14 @@ if __name__ == "__main__":
         print("SSDA Analysis System with MongoDB and PDF Generation")
         print("====================================================")
         
+        # Test MongoDB connection first
+        print("\n1. Testing MongoDB connection...")
+        mongodb_connected = test_mongodb_connection()
+        if mongodb_connected:
+            print("✅ MongoDB connection successful - files will be uploaded to database")
+        else:
+            print("❌ MongoDB connection failed - using mock mode for testing")
+        
         # Example applicant information
         example_applicant_info = {
             "full_name": "John Doe",
@@ -486,7 +646,7 @@ if __name__ == "__main__":
         }
         
         # Test PDF generation and MongoDB upload
-        print("\n1. Testing PDF generation and MongoDB upload...")
+        print("\n2. Testing PDF generation and MongoDB upload...")
         try:
             # Process documents (without external PDFs for now)
             result = process_applicant_documents(example_applicant_info)
@@ -503,14 +663,14 @@ if __name__ == "__main__":
         
         # Test Claude API if key is set
         if os.getenv("CLAUDE_API_KEY"):
-            print("\n2. Testing Claude API...")
+            print("\n3. Testing Claude API...")
             claude_result = await call_claude_api("Hello, this is a test message.")
             if claude_result["success"]:
                 print("✅ Claude API connection successful")
             else:
                 print(f"❌ Claude API error: {claude_result['error']}")
         else:
-            print("\n2. Claude API test skipped (CLAUDE_API_KEY not set)")
+            print("\n3. Claude API test skipped (CLAUDE_API_KEY not set)")
         
         print("\n=== System Test Complete ===")
         print("\nTo use the system, call:")
