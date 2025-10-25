@@ -10,112 +10,6 @@ from reportlab.lib.utils import ImageReader
 from datetime import datetime
 import io
 
-def read_from_database() -> Dict[str, Any]:
-    """
-    Hardcoded database function that returns SSDA information
-    """
-    database_data = {
-        "doctors": [
-            {
-                "name": "Dr. Sarah Johnson",
-                "phone": "(555) 123-4567",
-                "specialty": "Internal Medicine"
-            },
-            {
-                "name": "Dr. Michael Chen",
-                "phone": "(555) 234-5678",
-                "specialty": "Orthopedics"
-            },
-            {
-                "name": "Dr. Emily Rodriguez",
-                "phone": "(555) 345-6789",
-                "specialty": "Neurology"
-            }
-        ],
-        "hospitals_clinics": [
-            {
-                "name": "City General Hospital",
-                "phone": "(555) 456-7890",
-                "address": "123 Medical Center Dr, City, State 12345"
-            },
-            {
-                "name": "Downtown Medical Clinic",
-                "phone": "(555) 567-8901",
-                "address": "456 Health St, City, State 12345"
-            },
-            {
-                "name": "Specialty Care Center",
-                "phone": "(555) 678-9012",
-                "address": "789 Treatment Ave, City, State 12345"
-            }
-        ],
-        "medical_tests": [
-            {
-                "test_name": "MRI of Lumbar Spine",
-                "date": "2024-01-15",
-                "facility": "City General Hospital",
-                "results": "Shows L4-L5 disc herniation"
-            },
-            {
-                "test_name": "X-Ray of Right Knee",
-                "date": "2024-02-03",
-                "facility": "Downtown Medical Clinic",
-                "results": "Shows moderate arthritis"
-            },
-            {
-                "test_name": "Blood Work - Complete Metabolic Panel",
-                "date": "2024-02-10",
-                "facility": "Specialty Care Center",
-                "results": "Within normal limits"
-            }
-        ],
-        "medications": [
-            {
-                "name": "Ibuprofen",
-                "dosage": "400mg",
-                "frequency": "3 times daily",
-                "prescribed_by": "Dr. Sarah Johnson"
-            },
-            {
-                "name": "Gabapentin",
-                "dosage": "300mg",
-                "frequency": "Twice daily",
-                "prescribed_by": "Dr. Michael Chen"
-            },
-            {
-                "name": "Tramadol",
-                "dosage": "50mg",
-                "frequency": "As needed for pain",
-                "prescribed_by": "Dr. Emily Rodriguez"
-            }
-        ],
-        "workers_compensation": {
-            "date_of_injury": "2023-11-15",
-            "claim_number": "WC-2023-12345",
-            "insurance_company": "Workers Comp Insurance Co",
-            "status": "Active"
-        },
-        "medical_records_permission": {
-            "granted": True,
-            "date_signed": "2024-01-01",
-            "expires": "2025-01-01"
-        },
-        "basic_information": {
-            "full_name": "John Doe",
-            "date_of_birth": "1985-03-15",
-            "address": "123 Main Street, City, State 12345",
-            "phone": "(555) 789-0123",
-            "email": "john.doe@email.com"
-        },
-        "social_security_number": "123-45-6789",
-        "birth_location": {
-            "city": "Chicago",
-            "state": "Illinois",
-            "country": "United States"
-        }
-    }
-    
-    return database_data
 
 def create_general_applicant_info_pdf(applicant_info: Dict[str, Any]) -> bytes:
     """
@@ -414,24 +308,26 @@ async def call_claude_api(prompt: str) -> Dict[str, Any]:
         }
 
 # Example usage function
-async def analyze_ssda_data():
+async def analyze_ssda_data(applicant_info: Dict[str, Any] = None):
     """
-    Example function that combines database reading and Claude API calling
+    Example function that processes applicant information and calls Claude API
+    
+    Args:
+        applicant_info: Dictionary containing applicant personal information
     """
-    # Read data from database
-    print("Reading data from database...")
-    database_data = read_from_database()
-    print(f"Database data loaded: {len(database_data)} categories")
+    if applicant_info is None:
+        print("No applicant information provided")
+        return {"error": "No applicant information provided"}
     
     # Create prompt for Claude
     prompt = f"""
     Please analyze the following SSDA (Social Security Disability Application) data and provide insights:
     
-    Database Information:
-    {json.dumps(database_data, indent=2)}
+    Applicant Information:
+    {json.dumps(applicant_info, indent=2)}
     
     Please provide:
-    1. A summary of the medical information
+    1. A summary of the applicant information
     2. Any potential issues or missing information
     3. Recommendations for the disability application
     """
@@ -447,7 +343,7 @@ async def analyze_ssda_data():
         print(f"Claude API Error: {claude_response['error']}")
     
     return {
-        "database_data": database_data,
+        "applicant_info": applicant_info,
         "claude_response": claude_response
     }
 
@@ -464,27 +360,26 @@ if __name__ == "__main__":
         print("SSDA Analysis System with MongoDB and PDF Generation")
         print("====================================================")
         
-        # Test database reading
-        print("\n1. Testing database reading...")
-        db_data = read_from_database()
-        print(f"Database loaded with {len(db_data)} categories")
+        # Example applicant information
+        example_applicant_info = {
+            "full_name": "John Doe",
+            "address": "123 Main Street, City, State 12345",
+            "social_security_number": "123-45-6789",
+            "date_of_birth": "1985-03-15",
+            "phone": "(555) 789-0123",
+            "email": "john.doe@email.com",
+            "birth_location": {
+                "city": "Chicago",
+                "state": "Illinois",
+                "country": "United States"
+            }
+        }
         
         # Test PDF generation and MongoDB upload
-        print("\n2. Testing PDF generation and MongoDB upload...")
+        print("\n1. Testing PDF generation and MongoDB upload...")
         try:
-            # Extract basic information for PDF generation
-            applicant_info = {
-                "full_name": db_data["basic_information"]["full_name"],
-                "address": db_data["basic_information"]["address"],
-                "social_security_number": db_data["social_security_number"],
-                "date_of_birth": db_data["basic_information"]["date_of_birth"],
-                "phone": db_data["basic_information"]["phone"],
-                "email": db_data["basic_information"]["email"],
-                "birth_location": db_data["birth_location"]
-            }
-            
             # Process documents (without external PDFs for now)
-            result = process_applicant_documents(applicant_info)
+            result = process_applicant_documents(example_applicant_info)
             
             if result["success"]:
                 print(f"✅ {result['message']}")
@@ -498,15 +393,19 @@ if __name__ == "__main__":
         
         # Test Claude API if key is set
         if os.getenv("CLAUDE_API_KEY"):
-            print("\n3. Testing Claude API...")
+            print("\n2. Testing Claude API...")
             claude_result = await call_claude_api("Hello, this is a test message.")
             if claude_result["success"]:
                 print("✅ Claude API connection successful")
             else:
                 print(f"❌ Claude API error: {claude_result['error']}")
         else:
-            print("\n3. Claude API test skipped (CLAUDE_API_KEY not set)")
+            print("\n2. Claude API test skipped (CLAUDE_API_KEY not set)")
         
         print("\n=== System Test Complete ===")
+        print("\nTo use the system, call:")
+        print("process_applicant_documents(applicant_info, financial_pdf_path, medical_pdf_path)")
+        print("or")
+        print("analyze_ssda_data(applicant_info)")
     
     asyncio.run(main())
