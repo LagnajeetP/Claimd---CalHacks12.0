@@ -7,6 +7,17 @@ Follow these steps to set up and run the app:
 1. **Create a Python virtual environment** (recommended):
 
    ```bash
+   # 1. Clone the repository (if you have not already):
+
+   ```bash
+   git clone <repository-url>
+   ```
+
+   # 2. Navigate to the backend directory:
+
+   ```bash
+   cd backend
+   ```
    python -m venv venv
    ```
 
