@@ -4,6 +4,7 @@
 # Import Separate Files
 from api.ai.ai import ai
 from api.read.read import read
+from api.read.read import approve
 from api.write.write import write
 
 # Import Modules
@@ -18,6 +19,10 @@ app = FastAPI()
 @app.post("/read")
 async def mainAI():
     await ai()
+
+@app.post("/approve")
+async def mainApprove():
+    await approve()
 
 # REQUEST: 
 # RESPONSE: 
