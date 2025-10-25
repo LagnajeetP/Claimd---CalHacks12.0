@@ -232,7 +232,7 @@ export default function ApplicationDetail() {
                     </div>
                   </div>
                   
-                  <div className="h-[600px] bg-white">
+                  <div className="h-[800px] bg-white">
                     {pdfError ? (
                       <div className="h-full flex items-center justify-center bg-slate-50">
                         <div className="text-center">
