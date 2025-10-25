@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from anthropic import AsyncAnthropic
 from pymongo import MongoClient
 from reportlab.lib.pagesizes import letter
@@ -9,6 +9,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from datetime import datetime
 import io
+from fastapi import UploadFile, File, Form
 
 
 def create_general_applicant_info_pdf(applicant_info: Dict[str, Any]) -> bytes:
@@ -255,6 +256,115 @@ def process_applicant_documents(applicant_info: Dict[str, Any],
         return {
             "success": False,
             "error": f"Error processing documents: {str(e)}"
+        }
+
+async def process_multistep_form_data(
+    form_data: Dict[str, Any],
+    medical_records_file: Optional[UploadFile] = None,
+    financial_records_file: Optional[UploadFile] = None
+) -> Dict[str, Any]:
+    """
+    Process MultiStepForm data and create PDFs for MongoDB storage
+    
+    Args:
+        form_data: Dictionary containing form data from MultiStepForm.tsx
+        medical_records_file: Optional medical records PDF file
+        financial_records_file: Optional financial records PDF file
+        
+    Returns:
+        Dictionary with processing results
+    """
+    try:
+        # Extract and format applicant information from form data
+        applicant_info = {
+            "full_name": f"{form_data.get('firstName', '')} {form_data.get('lastName', '')}".strip(),
+            "address": f"{form_data.get('address', '')}, {form_data.get('city', '')}, {form_data.get('state', '')} {form_data.get('zipCode', '')}".strip(),
+            "social_security_number": form_data.get('socialSecurityNumber', ''),
+            "date_of_birth": form_data.get('dateOfBirth', ''),
+            "phone": form_data.get('phone', ''),  # Add phone field if needed
+            "email": form_data.get('email', ''),  # Add email field if needed
+            "birth_location": {
+                "city": form_data.get('birthCity', ''),
+                "state": form_data.get('birthState', ''),
+                "country": form_data.get('birthCountry', 'United States')
+            },
+            # Additional form data
+            "doctor_names": form_data.get('doctorNames', ''),
+            "doctor_phone_numbers": form_data.get('doctorPhoneNumbers', ''),
+            "hospital_names": form_data.get('hospitalNames', ''),
+            "hospital_phone_numbers": form_data.get('hospitalPhoneNumbers', ''),
+            "medical_records_permission": form_data.get('medicalRecordsPermission', False)
+        }
+        
+        print("Processing MultiStepForm data...")
+        print(f"Applicant: {applicant_info['full_name']}")
+        
+        # Create General Applicant Info PDF
+        print("Creating General Applicant Info PDF...")
+        general_pdf_content = create_general_applicant_info_pdf(applicant_info)
+        
+        # Prepare PDF files for upload
+        pdf_files = [
+            {
+                "filename": "General_Applicant_Info.pdf",
+                "content": general_pdf_content
+            }
+        ]
+        
+        # Add medical records PDF if provided
+        if medical_records_file and medical_records_file.filename:
+            medical_content = await medical_records_file.read()
+            pdf_files.append({
+                "filename": f"Medical_Records_{medical_records_file.filename}",
+                "content": medical_content
+            })
+            print(f"Added medical records PDF: {medical_records_file.filename}")
+        
+        # Add financial records PDF if provided
+        if financial_records_file and financial_records_file.filename:
+            financial_content = await financial_records_file.read()
+            pdf_files.append({
+                "filename": f"Financial_Records_{financial_records_file.filename}",
+                "content": financial_content
+            })
+            print(f"Added financial records PDF: {financial_records_file.filename}")
+        
+        # Upload all PDFs to MongoDB
+        print("Uploading PDFs to MongoDB...")
+        document_ids = write_multiple_pdfs_to_mongodb(pdf_files)
+        
+        # Also store the form data in MongoDB for reference
+        try:
+            client = connect_to_mongodb()
+            if client:
+                db = client.ssda_database
+                form_collection = db["form_submissions"]
+                
+                form_document = {
+                    "applicant_info": applicant_info,
+                    "submission_date": datetime.now(),
+                    "pdf_document_ids": document_ids,
+                    "files_uploaded": [pdf['filename'] for pdf in pdf_files]
+                }
+                
+                form_result = form_collection.insert_one(form_document)
+                print(f"Form data stored in MongoDB with ID: {form_result.inserted_id}")
+        except Exception as e:
+            print(f"Warning: Could not store form data in MongoDB: {e}")
+        
+        return {
+            "success": True,
+            "message": f"Successfully processed MultiStepForm data and uploaded {len(pdf_files)} documents",
+            "document_ids": document_ids,
+            "files_uploaded": [pdf['filename'] for pdf in pdf_files],
+            "applicant_name": applicant_info['full_name']
+        }
+        
+    except Exception as e:
+        print(f"Error processing MultiStepForm data: {e}")
+        return {
+            "success": False,
+            "error": f"Error processing MultiStepForm data: {str(e)}"
         }
 
 async def call_claude_api(prompt: str) -> Dict[str, Any]:
