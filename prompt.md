@@ -701,65 +701,432 @@ Apply progressive benefit formula to AIME:
 ---
 
 ## FINAL OUTPUT FORMAT:
+
+When you start outputting, please include the token <START_OUTPUT>. When finished, please end with <END_OUTPUT>. In this area, please only output according to the following JSON format.
+```json
+{
+  "decision": "APPROVED | DENIED | REQUIRES_HUMAN_REVIEW",
+  "confidence": {
+    "overall_percentage": 0,
+    "level": "HIGH | MEDIUM | LOW",
+    "phase_breakdown": {
+      "phase_0": {
+        "percentage": 0,
+        "reasoning": ""
+      },
+      "phase_1": {
+        "percentage": 0,
+        "reasoning": ""
+      },
+      "phase_2": {
+        "percentage": 0,
+        "reasoning": ""
+      },
+      "phase_3": {
+        "percentage": 0,
+        "reasoning": ""
+      },
+      "phase_4": {
+        "percentage": 0,
+        "reasoning": ""
+      },
+      "phase_5": {
+        "percentage": 0,
+        "reasoning": ""
+      }
+    }
+  },
+  "primary_determination_phase": "PHASE_0 | PHASE_1 | PHASE_2 | PHASE_3 | PHASE_4 | PHASE_5",
+  "executive_summary": "",
+  "determination_basis": {
+    "denial_reasons": {
+      "primary": {
+        "phase": "",
+        "reason": ""
+      },
+      "additional": [
+        {
+          "phase": "",
+          "reason": ""
+        }
+      ]
+    },
+    "approval_basis": {
+      "phase": "",
+      "details": ""
+    }
+  },
+  "phase_analysis": {
+    "phase_0_basic_eligibility": {
+      "status": "PASS | DENY | HUMAN_REVIEW",
+      "findings": {
+        "age_verification": {
+          "date_of_birth": "",
+          "current_age": 0,
+          "age_at_aod": 0,
+          "under_retirement_age": true
+        },
+        "insured_status": {
+          "quarters_of_coverage": 0,
+          "date_last_insured": "",
+          "meets_20_40_rule": true,
+          "disability_onset_before_dli": true
+        },
+        "application_timeliness": {
+          "application_date": "",
+          "alleged_onset_date": "",
+          "prior_applications": []
+        },
+        "document_completeness": {
+          "correct_program": "SSDI | SSI",
+          "required_forms_present": true,
+          "forms_list": [],
+          "medical_evidence_spans_period": true
+        }
+      },
+      "summary": "",
+      "citations": []
+    },
+    "phase_1_substantial_gainful_activity": {
+      "status": "PASS | DENY | HUMAN_REVIEW",
+      "findings": {
+        "work_activity": {
+          "employment_status_at_aod": "",
+          "current_employment_status": "",
+          "monthly_earnings": 0,
+          "hours_per_week": 0,
+          "job_duties": "",
+          "work_attempts_after_aod": []
+        },
+        "sga_calculation": {
+          "gross_monthly_earnings": 0,
+          "impairment_related_work_expenses": 0,
+          "subsidies": 0,
+          "net_earnings": 0,
+          "sga_threshold": 0,
+          "exceeds_sga": false
+        },
+        "special_considerations": {
+          "unsuccessful_work_attempt": false,
+          "trial_work_period": false,
+          "sheltered_workshop": false
+        }
+      },
+      "summary": "",
+      "citations": []
+    },
+    "phase_2_severe_impairment": {
+      "status": "PASS | DENY | HUMAN_REVIEW",
+      "findings": {
+        "primary_impairments": [
+          {
+            "diagnosis": "",
+            "icd_10_code": "",
+            "date_of_diagnosis": "",
+            "treating_physicians": []
+          }
+        ],
+        "clinical_findings": {
+          "objective_evidence": [],
+          "treatment_history": [],
+          "response_to_treatment": "",
+          "examination_findings": []
+        },
+        "duration_requirement": {
+          "lasted_12_months": true,
+          "expected_to_last_12_months": true,
+          "expected_to_result_in_death": false,
+          "onset_date": "",
+          "prognosis": ""
+        },
+        "functional_limitations": {
+          "physical": {
+            "lifting": "",
+            "standing_walking": "",
+            "sitting": "",
+            "reaching_handling": "",
+            "vision_hearing": ""
+          },
+          "mental": {
+            "understanding_memory": "",
+            "concentration": "",
+            "social_interaction": "",
+            "adaptation": ""
+          }
+        },
+        "severity_assessment": {
+          "is_severe": true,
+          "significantly_limits_work": true,
+          "combined_effect_considered": true
+        },
+        "medical_evidence_quality": {
+          "acceptable_sources": true,
+          "objective_support": true,
+          "treatment_gaps": false
+        }
+      },
+      "summary": "",
+      "citations": []
+    },
+    "phase_3_listed_impairments": {
+      "status": "APPROVE | DENY | HUMAN_REVIEW",
+      "findings": {
+        "applicable_listings": [
+          {
+            "listing_number": "",
+            "body_system": "",
+            "listing_name": "",
+            "criteria": {
+              "paragraph_a": {
+                "required": [],
+                "met": false,
+                "evidence": []
+              },
+              "paragraph_b": {
+                "required": [],
+                "met": false,
+                "evidence": []
+              },
+              "paragraph_c": {
+                "required": [],
+                "met": false,
+                "evidence": []
+              }
+            },
+            "meets_listing": false,
+            "equals_listing": false
+          }
+        ],
+        "medical_equivalence": {
+          "considered": true,
+          "unique_combination": false,
+          "equivalent_severity": false,
+          "analysis": ""
+        }
+      },
+      "summary": "",
+      "citations": []
+    },
+    "phase_4_rfc_and_past_work": {
+      "status": "PASS | DENY | HUMAN_REVIEW",
+      "findings": {
+        "residual_functional_capacity": {
+          "physical_rfc": {
+            "exertional_capacity": "SEDENTARY | LIGHT | MEDIUM | HEAVY | VERY_HEAVY",
+            "standing_walking_hours": 0,
+            "sitting_hours": 0,
+            "lifting_occasional_lbs": 0,
+            "lifting_frequent_lbs": 0,
+            "postural_limitations": {},
+            "manipulative_limitations": {},
+            "environmental_limitations": {}
+          },
+          "mental_rfc": {
+            "understand_remember_apply": "NOT_LIMITED | MILDLY_LIMITED | MODERATELY_LIMITED | MARKEDLY_LIMITED | EXTREMELY_LIMITED",
+            "interact_with_others": "NOT_LIMITED | MILDLY_LIMITED | MODERATELY_LIMITED | MARKEDLY_LIMITED | EXTREMELY_LIMITED",
+            "concentrate_persist_pace": "NOT_LIMITED | MILDLY_LIMITED | MODERATELY_LIMITED | MARKEDLY_LIMITED | EXTREMELY_LIMITED",
+            "adapt_manage_self": "NOT_LIMITED | MILDLY_LIMITED | MODERATELY_LIMITED | MARKEDLY_LIMITED | EXTREMELY_LIMITED"
+          },
+          "rfc_synthesis_sources": []
+        },
+        "past_relevant_work": [
+          {
+            "job_title": "",
+            "dot_code": "",
+            "dates_of_employment": "",
+            "hours_per_week": 0,
+            "earnings": 0,
+            "at_sga_level": true,
+            "duration_sufficient": true,
+            "exertional_level": "",
+            "skill_level": "UNSKILLED | SEMI_SKILLED | SKILLED",
+            "svp": 0,
+            "physical_demands": {},
+            "mental_demands": {},
+            "can_perform_as_actually_performed": false,
+            "can_perform_as_generally_performed": false,
+            "transferable_skills": []
+          }
+        ],
+        "can_perform_any_prw": false
+      },
+      "summary": "",
+      "citations": []
+    },
+    "phase_5_other_work": {
+      "status": "APPROVE | DENY | HUMAN_REVIEW",
+      "findings": {
+        "vocational_profile": {
+          "age_category": "YOUNGER | CLOSELY_APPROACHING_ADVANCED | ADVANCED | CLOSELY_APPROACHING_RETIREMENT",
+          "age": 0,
+          "education_level": "ILLITERATE | MARGINAL | LIMITED | HIGH_SCHOOL_OR_MORE",
+          "education_details": "",
+          "work_experience_years": 0,
+          "past_work_skill_level": "UNSKILLED | SEMI_SKILLED | SKILLED",
+          "transferable_skills": []
+        },
+        "grid_rules": {
+          "applicable": true,
+          "table_used": "TABLE_1_SEDENTARY | TABLE_2_LIGHT | TABLE_3_MEDIUM",
+          "rule_number": "",
+          "directed_verdict": "DISABLED | NOT_DISABLED | FRAMEWORK_ONLY",
+          "reasoning": ""
+        },
+        "alternative_occupations": [
+          {
+            "dot_code": "",
+            "job_title": "",
+            "exertional_level": "",
+            "skill_level": "",
+            "svp": 0,
+            "primary_duties": "",
+            "fits_within_rfc": true,
+            "reasoning": "",
+            "jobs_nationally": 0
+          }
+        ],
+        "occupational_base_analysis": {
+          "erosion_due_to_nonexertional": false,
+          "significant_jobs_available": true,
+          "age_education_experience_prevent_adjustment": false,
+          "borderline_factors": []
+        },
+        "can_adjust_to_other_work": false
+      },
+      "summary": "",
+      "citations": []
+    }
+  },
+  "benefit_calculation": {
+    "applicable": false,
+    "aime": {
+      "earnings_history": [],
+      "highest_35_years": [],
+      "indexed_earnings_sum": 0,
+      "aime_amount": 0
+    },
+    "pia": {
+      "first_bend_point_amount": 0,
+      "second_bend_point_amount": 0,
+      "third_portion_amount": 0,
+      "total_pia_before_rounding": 0,
+      "pia_rounded": 0
+    },
+    "family_maximum": {
+      "calculation": {},
+      "eligible_dependents": [],
+      "family_maximum_amount": 0
+    },
+    "offsets": {
+      "workers_compensation": 0,
+      "public_disability": 0,
+      "government_pension_offset": 0,
+      "windfall_elimination": 0,
+      "total_offset": 0
+    },
+    "waiting_period": {
+      "established_onset_date": "",
+      "first_month_of_entitlement": "",
+      "waiting_period_months": 5
+    },
+    "back_pay": {
+      "retroactive_period_start": "",
+      "retroactive_period_end": "",
+      "number_of_months": 0,
+      "monthly_benefit": 0,
+      "total_back_pay": 0
+    },
+    "medicare": {
+      "eligibility_date": "",
+      "immediate_eligibility_als": false
+    },
+    "summary": {
+      "monthly_ssdi_benefit": 0,
+      "dependent_benefits": {
+        "spouse": 0,
+        "children": []
+      },
+      "total_family_monthly_benefit": 0,
+      "total_back_pay": 0,
+      "medicare_eligible_date": "",
+      "payment_start_date": ""
+    }
+  },
+  "human_review_required": {
+    "required": false,
+    "specific_issues": [
+      {
+        "phase": "",
+        "issue": "",
+        "details": ""
+      }
+    ],
+    "missing_evidence": [],
+    "borderline_factors": []
+  },
+  "regulatory_citations": [
+    {
+      "citation": "",
+      "applies_to_phase": "",
+      "relevance": ""
+    }
+  ],
+  "key_evidence": {
+    "supporting_decision": [
+      {
+        "evidence_type": "",
+        "source": "",
+        "date": "",
+        "summary": "",
+        "weight": "CONTROLLING | SUBSTANTIAL | SUPPORTING | MINIMAL"
+      }
+    ],
+    "contradicting_decision": [
+      {
+        "evidence_type": "",
+        "source": "",
+        "date": "",
+        "summary": "",
+        "weight": "CONTROLLING | SUBSTANTIAL | SUPPORTING | MINIMAL"
+      }
+    ]
+  },
+  "appeal_risk_factors": [
+    {
+      "factor": "",
+      "risk_level": "HIGH | MEDIUM | LOW",
+      "explanation": ""
+    }
+  ],
+  "quality_control": {
+    "all_documents_reviewed": true,
+    "sequential_evaluation_applied": true,
+    "citations_provided": true,
+    "medical_evidence_considered": true,
+    "rfc_accounts_for_limitations": true,
+    "vocational_factors_categorized": true,
+    "grid_rules_applied_correctly": true,
+    "alternative_occupations_specific": true,
+    "benefit_calculation_accurate": true,
+    "regulatory_citations_accurate": true,
+    "summary_neutral_evidence_based": true,
+    "inconsistencies_noted": true,
+    "human_review_recommended_when_warranted": true
+  }
+}
 ```
-SSDI ELIGIBILITY DETERMINATION
 
-DECISION: [APPROVED / DENIED / REQUIRES HUMAN REVIEW]
-
-CONFIDENCE: [High/Medium/Low - %]
-
-PRIMARY DETERMINATION PHASE: [Phase where final decision made]
-
-═══════════════════════════════════════════════════
-
-EXECUTIVE SUMMARY:
-[2-3 paragraph overview]
-
-═══════════════════════════════════════════════════
-
-DENIAL REASONS (if denied):
-Primary: [Earliest phase where denial warranted]
-Additional: [All other denial reasons identified]
-
-OR
-
-APPROVAL BASIS (if approved):
-[Phase 3: Meets Listing X.XX / Phase 5: Cannot perform other work]
-
-═══════════════════════════════════════════════════
-
-DETAILED PHASE-BY-PHASE ANALYSIS:
-
-[Complete summary for each phase with citations]
-
-═══════════════════════════════════════════════════
-
-BENEFIT CALCULATION (if approved):
-Monthly Benefit: $____
-Back Pay: $____
-[Complete calculation breakdown]
-
-═══════════════════════════════════════════════════
-
-HUMAN REVIEW REQUIRED FOR (if applicable):
-[Specific issues itemized]
-
-MISSING EVIDENCE:
-[List needed documents]
-
-═══════════════════════════════════════════════════
-
-REGULATORY CITATIONS:
-[All applicable USC and CFR sections]
-
-KEY EVIDENCE:
-[Supporting and contradicting evidence lists]
-
-APPEAL RISK FACTORS:
-[Issues that could be challenged]
-```
-
----
+**Usage Instructions:**
+- Output must be valid JSON
+- Wrap output between `<START_OUTPUT>` and `<END_OUTPUT>` tokens
+- All string fields must be properly escaped
+- Arrays should be empty `[]` if no items present, not null
+- Boolean fields should be `true` or `false`, not null
+- Numeric fields should be `0` if not applicable, not null
+- Use enumerated values where specified (e.g., "HIGH | MEDIUM | LOW")
+- Dates should be in ISO 8601 format (YYYY-MM-DD) where applicable
+- All monetary amounts should be numeric values (not strings with $ symbols)
+- Ensure nested objects are complete even if some fields are not applicable
 
 ## Quality Control Checklist:
 
