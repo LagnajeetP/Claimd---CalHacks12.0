@@ -2,9 +2,9 @@
 # main.py -- Main Program for Backend
 
 # Import Separate Files
-from api.ai import ai
-from api.read import read
-from api.write import write
+from api.ai.ai import ai
+from api.read.read import read
+from api.write.write import write
 
 # Import Modules
 from fastapi import FastAPI
