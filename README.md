@@ -1,56 +1,72 @@
 # OUR PROJECT NAME
 
-## Running the app
+## Requirements
+
+- Python 3.x
+- pip
+
+## Project Structure
+
+The backend contains the main application code, organized as follows:
+
+```
+backend/
+├── api/
+│   ├── ai/
+│   ├── read/
+│   └── write/
+├── main.py
+├── requirements.txt
+└── .env
+```
+
+## Getting Started
 
 Follow these steps to set up and run the app:
 
-1. **Create a Python virtual environment** (recommended):
+### 1. Clone the Repository
 
-   ```bash
-   # 1. Clone the repository (if you have not already):
+```bash
+git clone <repository-url>
+cd <repository-directory>
+```
 
-   ```bash
-   git clone <repository-url>
-   ```
+### 2. Set Up a Python Virtual Environment (Recommended)
 
-   # 2. Navigate to the backend directory:
+Navigate to the backend directory and create a virtual environment:
 
-   ```bash
-   cd backend
-   python -m venv venv
-   ```
+```bash
+cd backend
+python -m venv venv
+```
 
-2. **Activate the virtual environment**:
+### 3. Activate the Virtual Environment
 
-   - On macOS/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
-   - On Windows:
-     ```bash
-     venv\Scripts\activate
-     ```
+- **macOS/Linux:**
+  ```bash
+  source venv/bin/activate
+  ```
+- **Windows:**
+  ```bash
+  venv\Scripts\activate
+  ```
 
-3. **Install dependencies**:
+### 4. Install Python Dependencies
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-4. **Set up environment variables**:
+### 5. Configure Environment Variables
 
-   - Create a file named `.env` inside the `backend` directory.
-   - Add your Claude API key to this file:
-     ```
-     CLAUDE_API_KEY=your_claude_api_key_here
-     ```
+- Inside the `backend` directory, create a file named `.env`.
+- Add your Claude API key:
+  ```
+  CLAUDE_API_KEY=your_claude_api_key_here
+  ```
 
-5. **Run the app**:
+### 6. Run the Application
 
-   ```bash
-   python main.py
-   ```
-
-# Requirements
-- Python 3.x
-- pip
+```bash
+python main.py
+```
