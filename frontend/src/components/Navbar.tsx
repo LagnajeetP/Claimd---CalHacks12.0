@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Zap, Shield, Clock } from 'lucide-react';
+import { Menu, X, Zap, Shield } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,6 +29,12 @@ export default function Navbar() {
             </Link>
             <Link 
               to="/user" 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              Dashboard
+            </Link>
+            <Link 
+              to="/user/form" 
               className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
             >
               Apply Now
@@ -69,6 +75,13 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/user"
+                className="block px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg mx-2 my-1 text-center font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/user/form"
                 className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
                 onClick={() => setIsOpen(false)}
               >
