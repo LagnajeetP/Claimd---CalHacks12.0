@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Loader2, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { api, type Application } from '../../services/api';
 
 export default function ApplicationDetail() {
@@ -10,6 +10,7 @@ export default function ApplicationDetail() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<'approve' | 'deny' | null>(null);
   const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0);
+  const [pdfError, setPdfError] = useState(false);
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -163,7 +164,10 @@ export default function ApplicationDetail() {
                     {application.documents.map((_, index) => (
                       <button
                         key={index}
-                        onClick={() => setCurrentDocumentIndex(index)}
+                        onClick={() => {
+                          setCurrentDocumentIndex(index);
+                          setPdfError(false);
+                        }}
                         className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
                           index === currentDocumentIndex
                             ? 'bg-blue-600 text-white'
@@ -178,19 +182,91 @@ export default function ApplicationDetail() {
               </div>
               
               <div className="p-6">
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
-                  <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-600 mb-2">
-                    {application.documents[currentDocumentIndex]?.split('/').pop() || 'Document'}
-                  </h3>
-                  <p className="text-slate-500 mb-4">
-                    Document {currentDocumentIndex + 1} of {application.documents.length}
-                  </p>
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <p className="text-sm text-slate-600">
-                      In a real implementation, this would display the PDF document using a PDF viewer component.
-                      The document path is: {application.documents[currentDocumentIndex]}
-                    </p>
+                <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                  <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <FileText className="w-5 h-5 text-slate-600" />
+                      <div>
+                        <h3 className="text-sm font-medium text-slate-800">
+                          {application.documents[currentDocumentIndex]?.split('/').pop() || 'Document'}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Document {currentDocumentIndex + 1} of {application.documents.length}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setCurrentDocumentIndex(Math.max(0, currentDocumentIndex - 1));
+                          setPdfError(false);
+                        }}
+                        disabled={currentDocumentIndex === 0}
+                        className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCurrentDocumentIndex(Math.min(application.documents.length - 1, currentDocumentIndex + 1));
+                          setPdfError(false);
+                        }}
+                        disabled={currentDocumentIndex === application.documents.length - 1}
+                        className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
+                      >
+                        Next
+                      </button>
+                      <button
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = application.documents[currentDocumentIndex];
+                          link.download = `document-${currentDocumentIndex + 1}.pdf`;
+                          link.click();
+                        }}
+                        className="px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors duration-200 flex items-center space-x-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[600px] bg-white">
+                    {pdfError ? (
+                      <div className="h-full flex items-center justify-center bg-slate-50">
+                        <div className="text-center">
+                          <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-slate-600 mb-2">PDF Preview Unavailable</h3>
+                          <p className="text-slate-500 mb-4">
+                            Your browser doesn't support PDF preview. You can download the document to view it.
+                          </p>
+                          <button
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = application.documents[currentDocumentIndex];
+                              link.download = `document-${currentDocumentIndex + 1}.pdf`;
+                              link.click();
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download PDF</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <iframe
+                        src={application.documents[currentDocumentIndex]}
+                        className="w-full h-full border-0"
+                        title={`Document ${currentDocumentIndex + 1}`}
+                        onLoad={() => setPdfError(false)}
+                        onError={() => setPdfError(true)}
+                      />
+                    )}
+                  </div>
+                  
+                  <div className="bg-slate-50 px-4 py-2 text-xs text-slate-500 text-center">
+                    Use your browser's PDF controls to zoom, scroll, and navigate through the document
                   </div>
                 </div>
               </div>
