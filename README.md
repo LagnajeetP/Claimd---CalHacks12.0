@@ -17,7 +17,9 @@ Follow these steps to set up and run the app:
 
    ```bash
    cd backend
-   ```
+
+   # 3. Create a virtual environment
+   ```bash
    python -m venv venv
    ```
 
