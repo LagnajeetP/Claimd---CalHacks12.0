@@ -1,6 +1,7 @@
 [
   {
     "name": "Alice Johnson",
+    "ssn": "123-45-6789",
     "applications": [
       {
         "application_id": "a3c6bbbc-6b33-4e91-97a5-7e38d1cfb001",
@@ -48,6 +49,7 @@
   },
   {
     "name": "Marcus Perez",
+    "ssn": "987-65-4321",
     "applications": [
       {
         "application_id": "dc114cee-cf5b-4eb7-bf91-1fea070c5c83",
