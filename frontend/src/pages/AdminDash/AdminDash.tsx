@@ -13,6 +13,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { api, type Application } from '../../services/api';
+import { maskSSN } from '../../utils/ssnUtils';
 
 export default function AdminDash() {
   const navigate = useNavigate();

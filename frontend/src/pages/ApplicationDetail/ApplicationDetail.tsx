@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Loader2, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { api, type Application } from '../../services/api';
+import { maskSSN } from '../../utils/ssnUtils';
 
 export default function ApplicationDetail() {
   const { applicationId } = useParams<{ applicationId: string }>();
@@ -329,7 +330,7 @@ export default function ApplicationDetail() {
                 </div>
                 <div>
                   <span className="text-sm font-medium text-slate-600">SSN:</span>
-                  <p className="text-slate-800 font-mono text-sm">{application.ssn}</p>
+                  <p className="text-slate-800 font-mono text-sm">{maskSSN(application.ssn || '')}</p>
                 </div>
                 <div>
                   <span className="text-sm font-medium text-slate-600">Documents:</span>
