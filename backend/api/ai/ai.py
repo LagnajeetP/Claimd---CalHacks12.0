@@ -611,10 +611,12 @@ async def analyze_ssda_data(applicant_info: Dict[str, Any] = None):
 
 # Legacy function for backward compatibility
 async def ai():
+    
     """
     Legacy function - calls the analyze_ssda_data function
     """
     return await analyze_ssda_data()
+
 
 if __name__ == "__main__":
     # Example usage
