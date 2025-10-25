@@ -339,6 +339,25 @@ export default function ApplicationDetail() {
               </div>
             </div>
 
+            {/* AI Summary */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Summary from Claude</h3>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-slate-700 leading-relaxed">{application.claude_summary}</p>
+              </div>
+            </div>
+
+            {/* Recommendation */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">AI Recommendation</h3>
+              <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg border ${getRecommendationColor(application.claude_recommendation)}`}>
+                {getRecommendationIcon(application.claude_recommendation)}
+                <span className="font-medium capitalize">
+                  {application.claude_recommendation.replace('_', ' ')}
+                </span>
+              </div>
+            </div>
+
             {/* Confidence Level */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">Confidence Level</h3>
@@ -357,25 +376,6 @@ export default function ApplicationDetail() {
                 </div>
                 <span className={`text-lg font-bold ${getConfidenceColor(application.claude_confidence_level)}`}>
                   {Math.round(application.claude_confidence_level * 100)}%
-                </span>
-              </div>
-            </div>
-
-            {/* AI Summary */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Summary from Claude</h3>
-              <div className="bg-slate-50 rounded-lg p-4">
-                <p className="text-slate-700 leading-relaxed">{application.claude_summary}</p>
-              </div>
-            </div>
-
-            {/* Recommendation */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">AI Recommendation</h3>
-              <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg border ${getRecommendationColor(application.claude_recommendation)}`}>
-                {getRecommendationIcon(application.claude_recommendation)}
-                <span className="font-medium capitalize">
-                  {application.claude_recommendation.replace('_', ' ')}
                 </span>
               </div>
             </div>
