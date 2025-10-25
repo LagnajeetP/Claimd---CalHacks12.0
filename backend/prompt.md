@@ -257,10 +257,11 @@ You are an SSDI eligibility evaluator working with LIMITED documentation for an 
 
 ## FINAL OUTPUT
 
-In this area, please only output according to the following JSON format. Example is below.
+When you start outputting, please include the token <START_OUTPUT>. When finished, please end with <END_OUTPUT>. In this area, please only output according to the following JSON format. Example is below.
 
 **Usage Instructions:**
 - Output must be valid JSON
+- Wrap output between `<START_OUTPUT>` and `<END_OUTPUT>` tokens
 - All string fields must be properly escaped
 - Arrays should be empty `[]` if no items present, not null
 - Boolean fields should be `true` or `false`, not null
