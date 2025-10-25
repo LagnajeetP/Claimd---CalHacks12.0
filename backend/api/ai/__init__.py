@@ -1,1 +1,1 @@
-import ai.ai
+from .ai import ai

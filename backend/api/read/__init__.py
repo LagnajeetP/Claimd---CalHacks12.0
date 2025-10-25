@@ -1,1 +1,1 @@
-import read.read
+from .read import read
