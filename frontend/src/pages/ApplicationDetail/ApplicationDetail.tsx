@@ -255,13 +255,57 @@ export default function ApplicationDetail() {
                         </div>
                       </div>
                     ) : (
-                      <iframe
-                        src={application.documents[currentDocumentIndex]}
-                        className="w-full h-full border-0"
-                        title={`Document ${currentDocumentIndex + 1}`}
-                        onLoad={() => setPdfError(false)}
-                        onError={() => setPdfError(true)}
-                      />
+                      <div className="w-full h-full">
+                        <iframe
+                          src={application.documents[currentDocumentIndex]}
+                          className="w-full h-full border-0"
+                          title={`Document ${currentDocumentIndex + 1}`}
+                          onLoad={() => {
+                            console.log('PDF loaded successfully:', application.documents[currentDocumentIndex]);
+                            setPdfError(false);
+                          }}
+                          onError={(e) => {
+                            console.error('PDF load error:', e, 'URL:', application.documents[currentDocumentIndex]);
+                            setPdfError(true);
+                          }}
+                        />
+                        {/* Fallback object tag */}
+                        <object
+                          data={application.documents[currentDocumentIndex]}
+                          type="application/pdf"
+                          className="w-full h-full hidden"
+                          onLoad={() => {
+                            console.log('PDF loaded via object tag:', application.documents[currentDocumentIndex]);
+                            setPdfError(false);
+                          }}
+                          onError={() => {
+                            console.error('PDF load error via object tag:', application.documents[currentDocumentIndex]);
+                            setPdfError(true);
+                          }}
+                        >
+                          <div className="h-full flex items-center justify-center bg-slate-50">
+                            <div className="text-center">
+                              <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-slate-600 mb-2">PDF Preview Unavailable</h3>
+                              <p className="text-slate-500 mb-4">
+                                Your browser doesn't support PDF preview. You can download the document to view it.
+                              </p>
+                              <button
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = application.documents[currentDocumentIndex];
+                                  link.download = `document-${currentDocumentIndex + 1}.pdf`;
+                                  link.click();
+                                }}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                              >
+                                <Download className="w-4 h-4" />
+                                <span>Download PDF</span>
+                              </button>
+                            </div>
+                          </div>
+                        </object>
+                      </div>
                     )}
                   </div>
                   

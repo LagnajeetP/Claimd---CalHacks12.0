@@ -24,9 +24,9 @@ const mockData: Applicant[] = [
       {
         "application_id": "a3c6bbbc-6b33-4e91-97a5-7e38d1cfb001",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/medical-records.pdf",
+          "/insurance-claim.pdf"
         ],
         "claude_confidence_level": 0.92,
         "claude_summary": "Alice Johnson suffers from chronic back pain and cannot perform her previous job. Extensive medical records support her claim.",
@@ -35,8 +35,8 @@ const mockData: Applicant[] = [
       {
         "application_id": "b29d0043-ddce-4fc5-a34e-1af806cdca22",
         "documents": [
-          "/example_pdfs/Print.pdf", 
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf", 
+          "/doctor-notes.pdf"
         ],
         "claude_confidence_level": 0.67,
         "claude_summary": "Alice experienced an injury last year, but documentation is limited. Further clarity on long-term disability is needed.",
@@ -45,8 +45,8 @@ const mockData: Applicant[] = [
       {
         "application_id": "0bb4b488-8037-49e1-8141-86fc501b7f98",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/medical-records.pdf"
         ],
         "claude_confidence_level": 0.80,
         "claude_summary": "Recent surgery has left Alice unable to work, according to her doctors; prognosis pending for recovery.",
@@ -55,9 +55,9 @@ const mockData: Applicant[] = [
       {
         "application_id": "12bd59a4-64ca-4371-95ba-4f4ec2a2cdee",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/Print.pdf",
+          "/Print.pdf"
         ],
         "claude_confidence_level": 0.97,
         "claude_summary": "Strong evidence supporting Alice's ongoing severe condition and lack of earning capacity.",
@@ -72,8 +72,8 @@ const mockData: Applicant[] = [
       {
         "application_id": "dc114cee-cf5b-4eb7-bf91-1fea070c5c83",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/medical-records.pdf"
         ],
         "claude_confidence_level": 0.89,
         "claude_summary": "Marcus Perez is unable to work due to multiple sclerosis as verified by specialists.",
@@ -82,10 +82,10 @@ const mockData: Applicant[] = [
       {
         "application_id": "003aa949-c733-4bbe-b046-470d431a5e5b",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/Print.pdf",
+          "/Print.pdf",
+          "/Print.pdf"
         ],
         "claude_confidence_level": 0.73,
         "claude_summary": "Marcus has partial supporting documents for chronic fatigue syndrome; income impact is significant.",
@@ -94,8 +94,8 @@ const mockData: Applicant[] = [
       {
         "application_id": "1b14ba82-a208-4f6e-8569-db13e141ebae",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/medical-records.pdf"
         ],
         "claude_confidence_level": 0.96,
         "claude_summary": "Additional updated records from Marcus's primary physician confirm the original diagnosis.",
@@ -104,9 +104,9 @@ const mockData: Applicant[] = [
       {
         "application_id": "c6e5842a-6a45-40ac-a7b1-817813059d90",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/Print.pdf",
+          "/Print.pdf"
         ],
         "claude_confidence_level": 0.51,
         "claude_summary": "Evidence for Marcus's claim was inconclusive; more documentation requested.",
@@ -115,8 +115,8 @@ const mockData: Applicant[] = [
       {
         "application_id": "991e42c4-eec8-4c6e-a7ee-ac03edbf2b11",
         "documents": [
-          "/example_pdfs/Print.pdf",
-          "/example_pdfs/Print.pdf"
+          "/Print.pdf",
+          "/medical-records.pdf"
         ],
         "claude_confidence_level": 0.79,
         "claude_summary": "Recent appeal for Marcus with updated MRI results; committee review suggested.",
