@@ -1,2 +1,2 @@
-def write():
+async def write():
     return "write"

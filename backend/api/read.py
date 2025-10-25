@@ -1,2 +1,2 @@
-def read():
+async def read():
     return "read"

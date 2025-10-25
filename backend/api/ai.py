@@ -1,2 +1,2 @@
-def ai():
+async def ai():
     return "ai"
