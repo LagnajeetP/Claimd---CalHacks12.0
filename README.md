@@ -39,6 +39,8 @@
 ## Overview
 
 Claimd is an AI-powered platform that dramatically reduces SSDI application processing time from **7 months to 1-2 days**. By automating document review and validation, we help 940,000 Americans waiting for disability benefits get faster decisions while giving SSA officers powerful AI assistance to review claims **20x faster**.
+
+
 Team: Lagnajeet Panigrahi, Angad Singh Josan, Sanjay Sundaram, Rohit Kulkarni, Praneeth Otthi
 ### The Problem
 
