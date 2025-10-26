@@ -175,4 +175,30 @@
     50% { transform: translateY(6px); opacity: 0.5; }
     100% { transform: translateY(0); opacity: 1; }
   }
+
+  /* Bubble forward animation for progress line */
+  .animate-bubble-forward {
+    animation: bubbleForward 1.5s ease-in-out infinite;
+  }
+
+  @keyframes bubbleForward {
+    0% { 
+      left: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    90% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% { 
+      left: 100%;
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 0;
+    }
+  }
 }
