@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 from typing import Any, Dict
 from connectDB import db
+import base64
+from bson import Binary
+
 
 # Load environment
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -44,6 +47,17 @@ async def read_application_by_id(application_id: str):
         app = await db.applications.find_one({"application_id": application_id})
         if not app:
             return {"success": False, "error": f"No application found with application_id {application_id}"}
+        
+        docs = app["documents"]
+        doc_id = docs["document_id"]
+        print(doc_id)
+                
+        doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
+        
+        if not doc:
+            return {"success": False, "application": bson_to_json(app)} 
+        
+        app["document"] = base64.b64encode(doc["data"]).decode("utf-8")
 
         return {"success": True, "application": bson_to_json(app)}
 
@@ -80,6 +94,21 @@ async def read_all_applications():
         print(f"❌ Error in read_all_applications(): {e}")
         return {"success": False, "error": str(e)}
 
+async def get_document_data(document_ref: Dict[str, Any]):
+    try:
+        if not document_ref or "document_id" not in document_ref:
+            return None
+        
+        document_id = document_ref["document_id"]
+        doc = await db.documents.find_one({"_id": ObjectId(document_id)})
+        
+        if not doc:
+            return None
+
+        return doc.get["data"]
+    except Exception as e:
+        print(f"ERROR FETCHING DOCUMENT DATA: {e}")
+        return None
 
 async def read_applications_by_user_ssn(ssn: str):
     """
@@ -109,7 +138,14 @@ async def read_applications_by_user_ssn(ssn: str):
         applications = []
         
         async for app in cursor:
-            applications.append(bson_to_json(app))
+            app_json = bson_to_json(app)
+            
+            document_ref = app.get("documents")
+            document_data = await get_document_data(document_ref)
+            
+            app_json["document_full"] = document_data
+            
+            applications.append(app_json)
 
         response_data = {
             "success": True,

@@ -18,7 +18,7 @@ import Cookies from 'js-cookie';
 
 interface Application {
   application_id: string;
-  documents: any[];
+  document: string;
   claude_confidence_level: number;
   claude_summary: string;
   claude_recommendation: 'approve' | 'further_review' | 'deny';
@@ -96,7 +96,7 @@ export default function AdminDash() {
                 
                 return {
                   application_id: app.application_id,
-                  documents: app.documents || [],
+                  document: app.document || "",
                   claude_confidence_level: app.claude_confidence_level,
                   claude_summary: app.claude_summary,
                   claude_recommendation: recommendation,
@@ -298,7 +298,7 @@ export default function AdminDash() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <FileText className="w-4 h-4 text-slate-500" />
-                          <span className="text-sm text-slate-600">{application.documents.length} documents</span>
+                          <span className="text-sm text-slate-600">{2} documents</span>
                         </div>
                       </div>
                       
