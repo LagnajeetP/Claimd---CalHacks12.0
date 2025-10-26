@@ -2,11 +2,11 @@
 # main.py -- Main Program for Backend
 
 # Import Separate Files
-from api.ai.ai import ai
+from api.ai.ai import ai, process_multistep_form_data
 from api.read.read import read
 
 # Import Modules
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 import uvicorn
 from pydantic import BaseModel
 from typing import Any, Dict
@@ -56,7 +56,64 @@ async def mainAI(medicalRecordsFile: UploadFile = File(...),
 
     return WriteResponse(**result)
 
-
+# REQUEST: MultiStepForm data with file uploads
+# RESPONSE: Processing results with MongoDB document IDs
+# FUNCTIONALITY: Process form data and upload to MongoDB with ordered fields
+@app.post("/api/benefit-application")
+async def handle_benefit_application(
+    firstName: str = Form(...),
+    lastName: str = Form(...),
+    dateOfBirth: str = Form(...),
+    address: str = Form(...),
+    city: str = Form(...),
+    state: str = Form(...),
+    zipCode: str = Form(...),
+    socialSecurityNumber: str = Form(...),
+    doctorNames: str = Form(""),
+    doctorPhoneNumbers: str = Form(""),
+    hospitalNames: str = Form(""),
+    hospitalPhoneNumbers: str = Form(""),
+    medicalRecordsPermission: bool = Form(False),
+    medicalRecordsFile: UploadFile = File(None),
+    incomeDocumentsFile: UploadFile = File(None)
+):
+    try:
+        form_data = {
+            "firstName": firstName,
+            "lastName": lastName,
+            "dateOfBirth": dateOfBirth,
+            "address": address,
+            "city": city,
+            "state": state,
+            "zipCode": zipCode,
+            "socialSecurityNumber": socialSecurityNumber,
+            "doctorNames": doctorNames,
+            "doctorPhoneNumbers": doctorPhoneNumbers,
+            "hospitalNames": hospitalNames,
+            "hospitalPhoneNumbers": hospitalPhoneNumbers,
+            "medicalRecordsPermission": medicalRecordsPermission
+        }
+        
+        result = await process_multistep_form_data(
+            form_data=form_data,
+            medical_records_file=medicalRecordsFile,
+            financial_records_file=incomeDocumentsFile
+        )
+        
+        if result["success"]:
+            return {
+                "success": True,
+                "message": result["message"],
+                "document_ids": result["document_ids"],
+                "files_uploaded": result["files_uploaded"],
+                "applicant_name": result["applicant_name"]
+            }
+        else:
+            raise HTTPException(status_code=500, detail=result["error"])
+            
+    except Exception as e:
+        print(f"Error in benefit application endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # REQUEST: 
 # RESPONSE: 
@@ -70,4 +127,4 @@ async def mainRead(request: ReadRequest):
 
 if __name__ == "__main__":
     # This runs the app when you do `python main.py`
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+  uvicorn.run(app, host="127.0.0.1", port=8000)
