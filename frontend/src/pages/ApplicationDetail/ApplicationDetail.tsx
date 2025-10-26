@@ -204,9 +204,9 @@ export default function ApplicationDetail() {
         </div>
 
         {/* Two Column Layout */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-hidden">
           {/* PDF Viewer */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col max-h-[900px]">
             <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-slate-50 flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-slate-600" />
@@ -228,7 +228,7 @@ export default function ApplicationDetail() {
               )}
             </div>
 
-            <div className="flex-1 bg-slate-50 min-h-0 relative">
+            <div className="flex-1 bg-slate-50 overflow-hidden relative">
               {pdfSrc && !pdfError ? (
                 <embed
                   src={`${pdfSrc}#toolbar=0&navpanes=0&scrollbar=1`}
@@ -248,37 +248,38 @@ export default function ApplicationDetail() {
           </div>
 
           {/* Right Column */}
-          <div className="flex flex-col gap-3 min-h-0 h-full">
+          <div className="flex flex-col gap-2 min-h-0 h-full max-h-[700px]" >
+            {/* Approve/Deny Buttons */}
+            <div className="space-y-2 flex-shrink-0">
+              <button
+                onClick={() => handleAction('approve')}
+                disabled={actionLoading === 'approve'}
+                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
+              >
+                {actionLoading === 'approve' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4" />
+                )}
+                <span>Approve</span>
+              </button>
+              <button
+                onClick={() => handleAction('deny')}
+                disabled={actionLoading === 'deny'}
+                className="w-full px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
+              >
+                {actionLoading === 'deny' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+                <span>Deny</span>
+              </button>
+            </div>
+            
             {/* Single Scrollable Section */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-              <div className="overflow-y-auto p-3 space-y-3">
-                {/* Approve/Deny Buttons */}
-                <div className="space-y-2">
-                  <button
-                    onClick={() => handleAction('approve')}
-                    disabled={actionLoading === 'approve'}
-                    className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
-                  >
-                    {actionLoading === 'approve' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4" />
-                    )}
-                    <span>Approve</span>
-                  </button>
-                  <button
-                    onClick={() => handleAction('deny')}
-                    disabled={actionLoading === 'deny'}
-                    className="w-full px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
-                  >
-                    {actionLoading === 'deny' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <XCircle className="w-4 h-4" />
-                    )}
-                    <span>Deny</span>
-                  </button>
-                </div>
+            <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
+              <div className="overflow-y-auto p-3 space-y-3 h-full">
 
                 {/* AI Recommendation */}
                 <div className="pt-3 border-t border-slate-200">
