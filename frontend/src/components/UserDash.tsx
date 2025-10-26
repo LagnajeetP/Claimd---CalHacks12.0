@@ -32,32 +32,6 @@ export default function UserDash() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const getRecommendationColor = (recommendation: string) => {
-    switch (recommendation) {
-      case 'approve':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'deny':
-        return 'text-red-600 bg-red-50 border-red-200';
-      case 'further_review':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getRecommendationIcon = (recommendation: string) => {
-    switch (recommendation) {
-      case 'approve':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'deny':
-        return <XCircle className="w-4 h-4" />;
-      case 'further_review':
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <AlertCircle className="w-4 h-4" />;
-    }
-  };
-
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'text-green-600';
     if (confidence >= 0.6) return 'text-yellow-600';
@@ -417,10 +391,6 @@ export default function UserDash() {
                             </span>
                           </div>
                           <div className="space-y-2">
-                            <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getRecommendationColor(app.claude_recommendation)}`}>
-                              {getRecommendationIcon(app.claude_recommendation)}
-                              <span className="capitalize">AI: {app.claude_recommendation.replace('_', ' ')}</span>
-                            </div>
                             {app.admin_status && (
                               <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getAdminStatusColor(app.admin_status)}`}>
                                 {getAdminStatusIcon(app.admin_status)}
