@@ -371,7 +371,6 @@ async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
         ) as stream:
             for text in stream.text_stream:
                 response_text += text
-                print(text, end="", flush=True)  # Stream to console
         
         print("\n\n--- PROCESSING COMPLETE ---\n")
         
