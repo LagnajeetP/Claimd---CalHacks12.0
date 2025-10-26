@@ -1,4 +1,4 @@
-# CalHacks Project
+# Claimd
 
 A full-stack application with FastAPI backend and React frontend.
 
