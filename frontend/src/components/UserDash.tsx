@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, User, CheckCircle, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import Cookies from 'js-cookie';
 import sampleData from '../sample_api_call_db.json';
 
@@ -28,6 +30,44 @@ export default function UserDash() {
   const [isLoading, setIsLoading] = useState(true);
   const [ssnFocused, setSsnFocused] = useState(false);
   const [ssnDisplayValue, setSsnDisplayValue] = useState('');
+  const navigate = useNavigate();
+
+  const getRecommendationColor = (recommendation: string) => {
+    switch (recommendation) {
+      case 'approve':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'deny':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'further_review':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getRecommendationIcon = (recommendation: string) => {
+    switch (recommendation) {
+      case 'approve':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'deny':
+        return <XCircle className="w-4 h-4" />;
+      case 'further_review':
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return 'text-green-600';
+    if (confidence >= 0.6) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const handleApplicationClick = (applicationId: string) => {
+    navigate(`/user/detail/${applicationId}`);
+  };
+
 
   const formatSSN = (value: string): string => {
     // Remove all non-digits
@@ -117,58 +157,115 @@ export default function UserDash() {
   }
 
   if (userData) {
+    const getUserInitials = (name: string) => {
+      const names = name.split(' ');
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    };
+
+    const getLastFourSSN = (ssn: string) => {
+      return ssn.slice(-4);
+    };
+
     return (
-      <div className="p-8">
+      <div className="min-h-screen flex items-center justify-center p-8">
         <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-green-800 mb-4">Welcome back!</h2>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-3">
-              <span className="font-medium text-gray-700">Name:</span>
-              <span className="text-gray-900">{userData.name}</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className="font-medium text-gray-700">SSN:</span>
-              <span className="text-gray-900 font-mono">{userData.ssn}</span>
+          {/* Animated User Avatar */}
+          <div className="flex justify-center mb-8">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-white relative overflow-hidden cursor-pointer">
+                {/* Animated floating bubbles */}
+                <div className="absolute inset-0">
+                  <div className="absolute w-8 h-8 bg-blue-300 rounded-full opacity-60 animate-bounce" style={{top: '20%', left: '15%', animationDelay: '0s', animationDuration: '3s'}}></div>
+                  <div className="absolute w-6 h-6 bg-green-300 rounded-full opacity-70 animate-bounce" style={{top: '60%', right: '20%', animationDelay: '1s', animationDuration: '2.5s'}}></div>
+                  <div className="absolute w-4 h-4 bg-white rounded-full opacity-80 animate-bounce" style={{top: '30%', right: '10%', animationDelay: '2s', animationDuration: '4s'}}></div>
+                  <div className="absolute w-5 h-5 bg-blue-200 rounded-full opacity-50 animate-bounce" style={{bottom: '25%', left: '25%', animationDelay: '0.5s', animationDuration: '3.5s'}}></div>
+                  <div className="absolute w-7 h-7 bg-green-200 rounded-full opacity-60 animate-bounce" style={{top: '70%', left: '10%', animationDelay: '1.5s', animationDuration: '2.8s'}}></div>
+                  <div className="absolute w-3 h-3 bg-white rounded-full opacity-90 animate-bounce" style={{top: '15%', right: '30%', animationDelay: '2.5s', animationDuration: '3.2s'}}></div>
+                </div>
+                
+                {/* User initials */}
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <span className="text-4xl font-bold text-gray-800 drop-shadow-lg">
+                    {getUserInitials(userData.name)}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Side dropdown on hover */}
+              <div className="absolute left-full top-0 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+                <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 min-w-48 mt-16">
+                  <div className="text-sm font-semibold text-gray-900 mb-1">{userData.name}</div>
+                  <div className="text-xs text-gray-600 font-mono mb-3">****-****-{getLastFourSSN(userData.ssn)}</div>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
         
         {databaseUser ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-800 mb-4">Your Applications ({databaseUser.applications.length})</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 className="text-xl font-semibold text-slate-800 mb-6">Your Applications ({databaseUser.applications.length})</h3>
             <div className="space-y-4">
               {databaseUser.applications.map((app, index) => (
-                <div key={app.application_id} className="bg-white rounded-lg p-4 border border-gray-200">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-gray-800">Application #{index + 1}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      app.claude_recommendation === 'approve' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {app.claude_recommendation === 'approve' ? 'Approved' : 'Under Review'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{app.claude_summary}</p>
-                  <div className="flex justify-between items-center text-xs text-gray-500">
-                    <span>Confidence: {Math.round(app.claude_confidence_level * 100)}%</span>
-                    <span>{app.documents.length} documents</span>
+                <div
+                  key={app.application_id}
+                  onClick={() => handleApplicationClick(app.application_id)}
+                  className="bg-slate-50 rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-4 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <User className="w-5 h-5 text-slate-500" />
+                          <span className="font-semibold text-slate-800">Application #{index + 1}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm text-slate-600">{app.documents.length} documents</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-slate-600">Approval Likeliness:</span>
+                          <span className={`font-bold ${getConfidenceColor(app.claude_confidence_level)}`}>
+                            {Math.round(app.claude_confidence_level * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-slate-600">Status:</span>
+                          <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md border text-xs ${getRecommendationColor(app.claude_recommendation)}`}>
+                            {getRecommendationIcon(app.claude_recommendation)}
+                            <span className="capitalize">{app.claude_recommendation.replace('_', ' ')}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-slate-600 line-clamp-2">
+                        <span className="font-medium">Application Summary:</span> {app.claude_summary}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 ml-4">
+                      <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors duration-200" />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">Your Applications</h3>
-            <p className="text-blue-700">No applications found in our system. Submit a new application to get started.</p>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">Your Applications</h3>
+            <p className="text-slate-600">No applications found in our system. Submit a new application to get started.</p>
           </div>
         )}
         </div>
