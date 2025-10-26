@@ -1,14 +1,12 @@
 import React from 'react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import MinimalNavbar from '../../components/MinimalNavbar';
 import UserDash from '../../components/UserDash';
 
 const UserPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen bg-white">
+      <MinimalNavbar />
       <UserDash />
-      <Footer />
     </div>
   );
 };

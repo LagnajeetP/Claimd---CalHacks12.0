@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, User, CheckCircle, XCircle, AlertCircle, ArrowRight, Shield, Plus } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, ArrowRight, Plus } from 'lucide-react';
 import Cookies from 'js-cookie';
 import sampleData from '../sample_api_call_db.json';
 
@@ -26,9 +26,8 @@ interface DatabaseUser {
 export default function UserDash() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [databaseUser, setDatabaseUser] = useState<DatabaseUser | null>(null);
-  const [formData, setFormData] = useState({ name: '', ssn: '' });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [ssnDisplayValue, setSsnDisplayValue] = useState('');
   const [userDatabase, setUserDatabase] = useState<any[]>([]);
   const navigate = useNavigate();
 
@@ -66,19 +65,6 @@ export default function UserDash() {
 
   const handleApplicationClick = (applicationId: string) => {
     navigate(`/user/detail/${applicationId}`);
-  };
-
-  const formatSSN = (value: string): string => {
-    const cleaned = value.replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{0,3})(\d{0,2})(\d{0,4})$/);
-    if (!match) return value;
-    
-    const [, part1, part2, part3] = match;
-    let formatted = '';
-    if (part1) formatted += part1;
-    if (part2) formatted += `-${part2}`;
-    if (part3) formatted += `-${part3}`;
-    return formatted;
   };
 
   const getUserInitials = (name: string) => {
@@ -123,46 +109,34 @@ export default function UserDash() {
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name.trim() && formData.ssn.trim()) {
-      const userData = {
-        name: formData.name.trim(),
-        ssn: formData.ssn.trim()
-      };
-      
-      // Check if this is an admin SSN
-      const adminSSN = import.meta.env.VITE_ADMIN_SSN || '123-00-4572'; // Fallback for development
-      console.log('Admin SSN from env:', import.meta.env.VITE_ADMIN_SSN);
-      console.log('Using admin SSN:', adminSSN);
-      console.log('User entered SSN:', userData.ssn);
-      
-      const cleanInputSSN = userData.ssn.replace(/\D/g, '');
-      const cleanAdminSSN = adminSSN.replace(/\D/g, '');
-      
-      console.log('Clean input SSN:', cleanInputSSN);
-      console.log('Clean admin SSN:', cleanAdminSSN);
-      console.log('Is admin?', cleanInputSSN === cleanAdminSSN);
-      
-      if (cleanInputSSN === cleanAdminSSN) {
-        // Admin login - redirect to admin dashboard
+    if (formData.username.trim() && formData.password.trim()) {
+      // Check for admin login
+      if (formData.username.toLowerCase() === 'admin' && formData.password === 'admin') {
+        const userData = {
+          name: 'Admin',
+          ssn: 'admin'
+        };
         Cookies.set('userData', JSON.stringify({ ...userData, role: 'admin' }), { expires: 7 });
         navigate('/admin');
         return;
       }
       
-      // Regular user login
+      // Regular user login - search by username
+      const userData = {
+        name: formData.username.trim(),
+        ssn: formData.password.trim() // Using password as SSN for user matching
+      };
+      
       Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
       setUserData(userData);
       
-      // Search in the current userDatabase state
-      const cleanSSN = userData.ssn.replace(/\D/g, '');
+      // Find user by name only
       const foundUser = userDatabase.find(user => 
-        user.name.toLowerCase() === userData.name.toLowerCase() && 
-        user.ssn.replace(/\D/g, '') === cleanSSN
+        user.name.toLowerCase() === userData.name.toLowerCase()
       ) || null;
       setDatabaseUser(foundUser);
       
-      setFormData({ name: '', ssn: '' });
-      setSsnDisplayValue('');
+      setFormData({ username: '', password: '' });
     }
   };
 
@@ -172,11 +146,6 @@ export default function UserDash() {
     setDatabaseUser(null);
   };
 
-  const handleSSNChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatSSN(e.target.value);
-    setFormData(prev => ({ ...prev, ssn: formatted }));
-    setSsnDisplayValue(formatted);
-  };
 
 
   useEffect(() => {
@@ -202,11 +171,9 @@ export default function UserDash() {
           
           setUserData(parsed);
           
-          // Search in the freshly fetched data
-          const cleanSSN = parsed.ssn.replace(/\D/g, '');
+          // Search in the freshly fetched data by name only
           const foundUser = fetchedData.find((user: any) => 
-            user.name.toLowerCase() === parsed.name.toLowerCase() && 
-            user.ssn.replace(/\D/g, '') === cleanSSN
+            user.name.toLowerCase() === parsed.name.toLowerCase()
           ) || null;
           setDatabaseUser(foundUser);
         } catch (error) {
@@ -222,10 +189,10 @@ export default function UserDash() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex items-center space-x-3">
-          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-lg text-slate-600">Loading...</span>
+          <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-lg text-gray-600 font-light">Loading...</span>
         </div>
       </div>
     );
@@ -233,61 +200,50 @@ export default function UserDash() {
 
   if (!userData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-6 py-20">
+      <div className="min-h-screen bg-white flex items-center justify-center px-6 py-20">
         <div className="max-w-md w-full">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center space-x-3 mb-6">
-              <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-800">Sign In</h1>
-                <p className="text-slate-600">Access your disability benefits dashboard</p>
-              </div>
-            </div>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-thin text-gray-900 mb-2">Sign In</h1>
+            <p className="text-gray-600 font-light">Access your disability benefits dashboard</p>
           </div>
           
           {/* Form */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="bg-white border border-gray-300 p-8">
             <form onSubmit={handleSignIn} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
-                  Full Name
+                <label htmlFor="username" className="block text-sm font-light text-gray-600 mb-2 uppercase tracking-wider text-xs">
+                  Username
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                  placeholder="Enter your full name"
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 focus:border-gray-900 transition-colors duration-200 font-light"
+                  placeholder="Enter your username"
                   required
                 />
               </div>
               
               <div>
-                <label htmlFor="ssn" className="block text-sm font-medium text-slate-700 mb-2">
-                  Social Security Number
+                <label htmlFor="password" className="block text-sm font-light text-gray-600 mb-2 uppercase tracking-wider text-xs">
+                  Password
                 </label>
                 <input
-                  type="text"
-                  id="ssn"
-                  value={ssnDisplayValue}
-                  onChange={handleSSNChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 font-mono"
-                  placeholder="XXX-XX-XXXX"
-                  maxLength={11}
+                  type="password"
+                  id="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 focus:border-gray-900 transition-colors duration-200 font-light"
+                  placeholder="Enter your password"
                   required
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  Your SSN is encrypted and stored securely
-                </p>
               </div>
               
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                className="w-full bg-gray-900 text-white py-3 hover:bg-gray-800 transition-all duration-200 font-light"
               >
                 Sign In
               </button>
@@ -299,7 +255,7 @@ export default function UserDash() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-6 py-20">
+    <div className="min-h-screen bg-white px-6 py-20 pt-32">
       <div className="max-w-4xl mx-auto">
         {/* User Avatar */}
         <div className="flex justify-center mb-8">
@@ -346,64 +302,51 @@ export default function UserDash() {
 
         {/* Applications */}
         {databaseUser ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-slate-800">Your Applications ({databaseUser.applications.length})</h3>
+          <div className="bg-white border border-gray-300 p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-3xl font-thin text-gray-900">Your Applications <span className="font-light text-gray-400">({databaseUser.applications.length})</span></h3>
               <button
                 onClick={() => navigate('/user/form')}
-                className="group relative bg-green-600 text-white p-3 rounded-full hover:bg-green-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                className="bg-gray-900 text-white p-3 hover:bg-gray-800 transition-all duration-200 font-light"
                 title="Apply for Benefits"
               >
                 <Plus className="w-6 h-6" />
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                  Apply for Benefits
-                </div>
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-8">
               {databaseUser.applications.map((app, index) => (
                 <div
                   key={app.application_id}
                   onClick={() => handleApplicationClick(app.application_id)}
-                  className="bg-slate-50 rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer group"
+                  className="border border-gray-300 p-6 hover:border-gray-900 transition-all duration-200 cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-4 mb-3">
-                        <div className="flex items-center space-x-2">
-                          <User className="w-5 h-5 text-slate-500" />
-                          <span className="font-semibold text-slate-800">Application #{index + 1}</span>
+                      <div className="flex items-center space-x-6 mb-4">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-6xl font-thin text-gray-300">{String(index + 1).padStart(2, '0')}</span>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <FileText className="w-4 h-4 text-slate-500" />
-                          <span className="text-sm text-slate-600">{app.documents.length} documents</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 mb-3">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-slate-600">Approval Likeliness:</span>
-                          <span className={`font-bold ${getConfidenceColor(app.claude_confidence_level)}`}>
-                            {Math.round(app.claude_confidence_level * 100)}%
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-slate-600">Predicted Outcome:</span>
-                          <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md border text-xs ${getRecommendationColor(app.claude_recommendation)}`}>
+                        <div>
+                          <div className="mb-2 flex items-center space-x-3">
+                            <span className="text-sm font-light text-gray-600 uppercase tracking-wider">Approval Likeliness</span>
+                            <span className={`font-light text-lg ${getConfidenceColor(app.claude_confidence_level)}`}>
+                              {Math.round(app.claude_confidence_level * 100)}%
+                            </span>
+                          </div>
+                          <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getRecommendationColor(app.claude_recommendation)}`}>
                             {getRecommendationIcon(app.claude_recommendation)}
                             <span className="capitalize">{app.claude_recommendation.replace('_', ' ')}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-sm text-slate-600 line-clamp-2">
-                        <span className="font-medium">Application Summary:</span> {app.claude_summary}
+                      <div className="text-sm text-gray-600 font-light line-clamp-2 pl-24">
+                        {app.claude_summary}
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2 ml-4">
-                      <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors duration-200" />
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-900 transition-colors duration-200" />
                     </div>
                   </div>
                 </div>
@@ -411,22 +354,18 @@ export default function UserDash() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="bg-white border border-gray-300 p-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-slate-800">Your Applications</h3>
+              <h3 className="text-3xl font-thin text-gray-900">Your Applications</h3>
               <button
                 onClick={() => navigate('/user/form')}
-                className="group relative bg-green-600 text-white p-3 rounded-full hover:bg-green-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                className="bg-gray-900 text-white p-3 hover:bg-gray-800 transition-all duration-200 font-light"
                 title="Apply for Benefits"
               >
                 <Plus className="w-6 h-6" />
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                  Apply for Benefits
-                </div>
               </button>
             </div>
-            <p className="text-slate-600">No applications found in our system. Submit a new application to get started.</p>
+            <p className="text-gray-600 font-light">No applications found in our system. Submit a new application to get started.</p>
           </div>
         )}
       </div>

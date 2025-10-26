@@ -12,8 +12,7 @@ import {
   ArrowRight,
   LogOut
 } from 'lucide-react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import MinimalNavbar from '../../components/MinimalNavbar';
 import sampleData from '../../sample_api_call_db.json';
 import Cookies from 'js-cookie';
 
@@ -137,18 +136,18 @@ export default function AdminDash() {
   const deniedCount = applications.filter(app => app.claude_recommendation === 'deny').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <Navbar />
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
+    <div className="min-h-screen bg-white">
+      <MinimalNavbar />
+      <div className="max-w-7xl mx-auto px-6 py-8 pt-24">
+        <div className="mb-16">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
-              <p className="text-slate-600">Manage and review disability benefit applications</p>
+              <h1 className="text-4xl md:text-6xl font-thin text-gray-900 mb-2">Admin Dashboard</h1>
+              <p className="text-gray-600 font-light">Manage and review disability benefit applications</p>
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+              className="flex items-center space-x-2 border border-gray-900 px-4 py-2 hover:bg-gray-900 hover:text-white transition-all duration-200 font-light text-sm"
             >
               <LogOut className="w-4 h-4" />
               <span>Sign Out</span>
@@ -157,58 +156,30 @@ export default function AdminDash() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Total Applications</p>
-                <p className="text-3xl font-bold text-slate-900">{applications.length}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <div className="border border-gray-300 p-6">
+            <p className="text-sm font-light text-gray-500 mb-4 uppercase tracking-wider">Total Applications</p>
+            <p className="text-5xl font-thin text-gray-900">{applications.length}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Approved</p>
-                <p className="text-3xl font-bold text-green-600">{approvedCount}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
+          <div className="border border-gray-300 p-6">
+            <p className="text-sm font-light text-gray-500 mb-4 uppercase tracking-wider">Approved</p>
+            <p className="text-5xl font-thin text-green-600">{approvedCount}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Pending Review</p>
-                <p className="text-3xl font-bold text-yellow-600">{pendingCount}</p>
-              </div>
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
+          <div className="border border-gray-300 p-6">
+            <p className="text-sm font-light text-gray-500 mb-4 uppercase tracking-wider">Pending Review</p>
+            <p className="text-5xl font-thin text-yellow-600">{pendingCount}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Denied</p>
-                <p className="text-3xl font-bold text-red-600">{deniedCount}</p>
-              </div>
-              <div className="p-3 bg-red-100 rounded-lg">
-                <XCircle className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
+          <div className="border border-gray-300 p-6">
+            <p className="text-sm font-light text-gray-500 mb-4 uppercase tracking-wider">Denied</p>
+            <p className="text-5xl font-thin text-red-600">{deniedCount}</p>
           </div>
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+        <div className="border border-gray-300 p-6 mb-16">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -237,9 +208,9 @@ export default function AdminDash() {
         </div>
 
         {/* Applications List */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-semibold text-slate-800">Applications ({filteredApplications.length})</h2>
+        <div className="border border-gray-300">
+          <div className="p-6 border-b border-gray-300">
+            <h2 className="text-2xl font-thin text-gray-900">Applications <span className="font-light text-gray-400">({filteredApplications.length})</span></h2>
           </div>
           
           {filteredApplications.length === 0 ? (
@@ -306,7 +277,6 @@ export default function AdminDash() {
           )}
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
