@@ -7,45 +7,58 @@ from api.read.read import read
 
 # Import Modules
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import json
+from pydantic import BaseModel
+from typing import Any, Dict
+
+# RESPONSE/REQUEST SCHEMAS
+class ReadRequest(BaseModel):
+    ssn: str  # specifically expect an SSN string
+
+class ReadResponse(BaseModel):
+    data: Dict[str, Any]
+class WriteResponse(BaseModel):
+    decision: str
+    confidence: float
+    confidence_label: str
+    summary: str
+    recommendation: str
+    ssdi_amount: float
 
 app = FastAPI()
 
-# Add CORS middleware to allow frontend requests
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Add your frontend URLs
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # REQUEST: 
 # RESPONSE: 
 # FUNCTIONALITY: 
-@app.post("/read")
-async def mainAI():
-    await ai()
+@app.post("/write", response_model=WriteResponse)
+async def mainAI(medicalRecordsFile: UploadFile = File(...),
+    incomeDocumentsFile: UploadFile = File(...),
+    firstName: str = Form(...),
+    lastName: str = Form(...),
+    address: str = Form(...),
+    dateOfBirth: str = Form(...),
+    socialSecurityNumber: str = Form(...)
+):
+        # Read uploaded files as bytes
+    medical_pdf_bytes = await medicalRecordsFile.read()
+    income_pdf_bytes = await incomeDocumentsFile.read()
 
-# REQUEST: 
-# RESPONSE: 
-# FUNCTIONALITY: 
-@app.post("/write")
-async def mainRead():
-    await read()
+    # Call your AI function with all inputs
+    result = await ai(
+        medical_pdf_bytes=medical_pdf_bytes,
+        income_pdf_bytes=income_pdf_bytes,
+        first_name=firstName,
+        last_name=lastName,
+        address=address,
+        date_of_birth=dateOfBirth,
+        social_security_number=socialSecurityNumber
+    )
 
-# REQUEST: 
-# RESPONSE: 
-# FUNCTIONALITY: 
-@app.post("/ai")
-async def mainAI():
-    return await ai()
+    return WriteResponse(**result)
 
 # REQUEST: MultiStepForm data with file uploads
-# RESPONSE: Processing results with document IDs
-# FUNCTIONALITY: Process form data, create PDFs, and store in MongoDB
+# RESPONSE: Processing results with MongoDB document IDs
+# FUNCTIONALITY: Process form data and upload to MongoDB with ordered fields
 @app.post("/api/benefit-application")
 async def handle_benefit_application(
     firstName: str = Form(...),
@@ -65,7 +78,6 @@ async def handle_benefit_application(
     incomeDocumentsFile: UploadFile = File(None)
 ):
     try:
-        # Prepare form data dictionary
         form_data = {
             "firstName": firstName,
             "lastName": lastName,
@@ -82,7 +94,6 @@ async def handle_benefit_application(
             "medicalRecordsPermission": medicalRecordsPermission
         }
         
-        # Process the form data and files
         result = await process_multistep_form_data(
             form_data=form_data,
             medical_records_file=medicalRecordsFile,
@@ -104,6 +115,16 @@ async def handle_benefit_application(
         print(f"Error in benefit application endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+# REQUEST: 
+# RESPONSE: 
+# FUNCTIONALITY: 
+@app.post("/read", response_model=ReadResponse)
+async def mainRead(request: ReadRequest):
+    result = await read(request.ssn)
+    
+    return ReadResponse(data=result)
+
+
 if __name__ == "__main__":
     # This runs the app when you do `python main.py`
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+  uvicorn.run(app, host="127.0.0.1", port=8000)
