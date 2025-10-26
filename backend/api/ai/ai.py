@@ -191,7 +191,7 @@ async def store_documents_in_db(combinedDocument, combinedDocumentName):
             "document_type": "medical_records"
         }
         combined_result = await db.documents.insert_one(medical_doc)
-        documents = {
+        document = {
             "document_id": str(combined_result),
             "filename": combinedDocumentName,
             "document_type": "combined_document"
