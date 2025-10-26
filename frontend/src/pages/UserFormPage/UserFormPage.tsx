@@ -13,12 +13,12 @@ const UserFormPage: React.FC = () => {
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto font-light">
             Complete this step-by-step application to get your benefits processed 
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"> 10x faster</span> with our AI-powered system.
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"> 20x faster</span> with our AI-powered system.
           </p>
           <div className="mt-8 flex justify-center space-x-8 text-sm text-gray-500">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Multi Agent System</span>
+              <span>Secure & HIPAA Compliant</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
