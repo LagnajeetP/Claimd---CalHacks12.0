@@ -13,7 +13,7 @@ export default function Footer() {
                 <Zap className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                BenefitFlow
+                Claimd
               </span>
             </Link>
             <p className="text-gray-300 mb-6 max-w-md">
@@ -60,7 +60,7 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-300">
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
-                <span>support@benefitflow.ai</span>
+                <span>support@claimd.ai</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4" />
@@ -78,7 +78,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-4 text-sm text-gray-400 mb-4 md:mb-0">
-              <span>© 2024 BenefitFlow. All rights reserved.</span>
+              <span>© 2024 Claimd. All rights reserved.</span>
               <span>•</span>
               <a href="#" className="hover:text-white transition-colors duration-200">
                 Privacy Policy
