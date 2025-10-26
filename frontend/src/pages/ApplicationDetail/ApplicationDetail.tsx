@@ -224,14 +224,6 @@ export default function ApplicationDetail() {
           {/* Right: Summary & Actions */}
           <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Application Info</h3>
-              <div className="space-y-1 text-xs">
-                <p><strong>Name:</strong> {application.applicant_name}</p>
-                <p><strong>SSN:</strong> {maskSSN(application.socialSecurityNumber || '')}</p>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Summary</h3>
               <p className="text-slate-700 text-xs leading-relaxed">{application.claude_summary}</p>
             </div>
