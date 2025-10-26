@@ -52,6 +52,7 @@ export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showInterlude, setShowInterlude] = useState(false);
   const [ssnFocused, setSsnFocused] = useState(false);
   const [ssnDisplayValue, setSsnDisplayValue] = useState('');
 
@@ -156,8 +157,9 @@ export default function MultiStepForm() {
   };
 
   const handleSubmit = async () => {
-    // Show success message immediately
+    // Show interlude screen immediately
     setIsSubmitted(true);
+    setShowInterlude(true);
     
     // Store user data in cookie for automatic login
     const userData = {
@@ -165,11 +167,6 @@ export default function MultiStepForm() {
       ssn: formData.socialSecurityNumber
     };
     Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
-    
-    // Redirect to user dashboard after a short delay
-    setTimeout(() => {
-      window.location.href = '/user';
-    }, 2000);
     
     // Send data to backend in the background (fire and forget)
     const submitData = new FormData();
@@ -187,6 +184,10 @@ export default function MultiStepForm() {
     }).catch(error => {
       console.error('Error submitting form to backend:', error);
     });
+  };
+
+  const handleGoToDashboard = () => {
+    window.location.href = '/user';
   };
 
   const isStepComplete = (step: number): boolean => {
@@ -683,6 +684,64 @@ export default function MultiStepForm() {
         return null;
     }
   };
+
+  // If showing interlude screen, render that instead
+  if (showInterlude) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+          <div className="mb-8">
+            <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-6" />
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Application Submitted Successfully!</h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Thank you for submitting your disability benefits application.
+            </p>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-8 mb-8">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">What happens next?</h3>
+            <div className="text-left max-w-2xl mx-auto space-y-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4">1</div>
+                <div>
+                  <p className="font-medium text-gray-900">Application Review</p>
+                  <p className="text-gray-600">Our team will review your submitted documents and information.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4">2</div>
+                <div>
+                  <p className="font-medium text-gray-900">Medical Records Verification</p>
+                  <p className="text-gray-600">We'll contact your healthcare providers to verify your medical information.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4">3</div>
+                <div>
+                  <p className="font-medium text-gray-900">Decision Notification</p>
+                  <p className="text-gray-600">You'll receive a notification about the status of your application.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-8">
+            <h4 className="text-xl font-semibold text-green-900 mb-2">Estimated Time for Approval</h4>
+            <p className="text-3xl font-bold text-green-600">1-2 Days</p>
+            <p className="text-sm text-gray-600 mt-2">You will be notified via email once a decision has been made.</p>
+          </div>
+
+          <button
+            onClick={handleGoToDashboard}
+            className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto space-x-2"
+          >
+            <span>Go to Dashboard</span>
+            <ArrowRight className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
