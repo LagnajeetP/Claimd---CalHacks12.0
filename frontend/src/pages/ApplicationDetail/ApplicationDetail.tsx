@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Loader2, Download } from 'lucide-react';
 import { api, type Application } from '../../services/api';
 import { maskSSN } from '../../utils/ssnUtils';
-import PDFViewer from '../../components/PDFViewer';
 
 export default function ApplicationDetail() {
   const { applicationId } = useParams<{ applicationId: string }>();
@@ -12,6 +11,7 @@ export default function ApplicationDetail() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<'approve' | 'deny' | null>(null);
   const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0);
+  const [pdfError, setPdfError] = useState(false);
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -161,7 +161,10 @@ export default function ApplicationDetail() {
                     {application.documents.map((_, index) => (
                       <button
                         key={index}
-                        onClick={() => setCurrentDocumentIndex(index)}
+                        onClick={() => {
+                          setCurrentDocumentIndex(index);
+                          setPdfError(false);
+                        }}
                         className={`px-3 py-1 text-sm rounded-md transition-colors duration-200 ${
                           index === currentDocumentIndex
                             ? 'bg-blue-600 text-white'
@@ -191,27 +194,74 @@ export default function ApplicationDetail() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => setCurrentDocumentIndex(Math.max(0, currentDocumentIndex - 1))}
+                        onClick={() => {
+                          setCurrentDocumentIndex(Math.max(0, currentDocumentIndex - 1));
+                          setPdfError(false);
+                        }}
                         disabled={currentDocumentIndex === 0}
                         className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
                       >
                         Previous
                       </button>
                       <button
-                        onClick={() => setCurrentDocumentIndex(Math.min(application.documents.length - 1, currentDocumentIndex + 1))}
+                        onClick={() => {
+                          setCurrentDocumentIndex(Math.min(application.documents.length - 1, currentDocumentIndex + 1));
+                          setPdfError(false);
+                        }}
                         disabled={currentDocumentIndex === application.documents.length - 1}
                         className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
                       >
                         Next
                       </button>
+                      <button
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = application.documents[currentDocumentIndex];
+                          link.download = `document-${currentDocumentIndex + 1}.pdf`;
+                          link.click();
+                        }}
+                        className="px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors duration-200 flex items-center space-x-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download</span>
+                      </button>
                     </div>
                   </div>
                   
-                  <div className="h-[800px] bg-white relative">
-                    <PDFViewer 
-                      url={application.documents[currentDocumentIndex]} 
-                      documentName={application.documents[currentDocumentIndex]?.split('/').pop() || 'document.pdf'}
-                    />
+                  <div className="h-[800px] bg-white">
+                    {pdfError ? (
+                      <div className="h-full flex items-center justify-center bg-slate-50">
+                        <div className="text-center">
+                          <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-slate-600 mb-2">PDF Preview Unavailable</h3>
+                          <p className="text-slate-500 mb-4">
+                            Your browser doesn't support PDF preview. You can download the document to view it.
+                          </p>
+                          <button
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = application.documents[currentDocumentIndex];
+                              link.download = `document-${currentDocumentIndex + 1}.pdf`;
+                              link.click();
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download PDF</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full">
+                        <iframe
+                          src={application.documents[currentDocumentIndex]}
+                          className="w-full h-full border-0"
+                          title={`Document ${currentDocumentIndex + 1}`}
+                          onLoad={() => setPdfError(false)}
+                          onError={() => setPdfError(true)}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -230,7 +280,7 @@ export default function ApplicationDetail() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">SSN</label>
-                  <p className="text-slate-800 font-mono">{maskSSN(application.applicant_ssn)}</p>
+                  <p className="text-slate-800 font-mono">{maskSSN(application.applicant_ssn || application.ssn || '')}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">Application ID</label>
