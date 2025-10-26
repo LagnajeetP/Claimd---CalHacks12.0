@@ -8,6 +8,14 @@ from datetime import datetime
 import uuid
 from bson import Binary
 import sys
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from PyPDF2 import PdfMerger
+
 
 # Add parent directory to path to import connectDB
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -18,6 +26,137 @@ load_dotenv(dotenv_path)
 
 
 client = anthropic.Anthropic(api_key=os.getenv("CLAUDE_API_KEY"))
+
+# Combine PDFs
+# form_data:
+# firstName
+# lastName
+# dateOfBirth
+# socialSecurityNumber
+# streetAddress
+# city
+# state
+# zipCode
+
+async def merge_pdfs(form_data: dict, document_list: list):
+    try:
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        story = []
+        styles = getSampleStyleSheet()
+        
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#1a365d'),
+            spaceAfter=30,
+            alignment=1
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#2d3748'),
+            spaceAfter=12,
+            spaceBefore=20
+        )
+        
+        # Title
+        story.append(Paragraph("SSDI Application Summary", title_style))
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Application ID and Date
+        story.append(Paragraph(f"<b>Submission Date:</b> {datetime.utcnow().strftime('%B %d, %Y')}", styles['Normal']))
+        story.append(Spacer(1, 0.5*inch))
+        
+        # Personal Information Section
+        story.append(Paragraph("Personal Information", heading_style))
+        
+        personal_data = [
+            ["Full Name:", f"{form_data.get('firstName', '')} {form_data.get('lastName', '')}"],
+            ["Date of Birth:", form_data.get('dateOfBirth', 'N/A')],
+            ["Social Security Number:", form_data.get('socialSecurityNumber', 'N/A')],
+        ]
+
+        personal_table = Table(personal_data, colWidths=[2*inch, 4*inch])
+        personal_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f7fafc')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        
+        story.append(personal_table)
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Address
+                # Address Section
+        story.append(Paragraph("Address", heading_style))
+        
+        address_data = [
+            ["Street Address:", form_data.get('streetAddress', 'N/A')],
+            ["City:", form_data.get('city', 'N/A')],
+            ["State:", form_data.get('state', 'N/A')],
+            ["ZIP Code:", form_data.get('zipCode', 'N/A')],
+        ]
+        
+        address_table = Table(address_data, colWidths=[2*inch, 4*inch])
+        address_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f7fafc')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        
+        story.append(address_table)
+        story.append(Spacer(1, 0.5*inch))
+        
+        # Document Information
+        story.append(Paragraph("Attached Documents", heading_style))
+        story.append(Paragraph(f"• Total Documents: {len(document_list)}", styles['Normal']))
+
+                # Build cover page PDF
+        doc.build(story)
+        buffer.seek(0)
+        cover_page_bytes = buffer.getvalue()
+        
+        # Merge all PDFs
+        merger = PdfMerger()
+        
+        # Add cover page
+        merger.append(BytesIO(cover_page_bytes))
+        
+        # Add all documents from the list
+        for doc_bytes in document_list:
+            merger.append(BytesIO(doc_bytes))
+        
+        # Write to output buffer
+        output_buffer = BytesIO()
+        merger.write(output_buffer)
+        merger.close()
+        
+        output_buffer.seek(0)
+        return output_buffer.getvalue()
+    except Exception as e:
+        print(f"❌ Error merging PDFs: {e}")
+        raise e
+
+        
+        
 
 # --------------------------------------------------------
 # Load prompt.md content
@@ -34,52 +173,41 @@ def load_prompt() -> str:
 # --------------------------------------------------------
 # Store documents in MongoDB GridFS or as Binary
 # --------------------------------------------------------
-async def store_documents_in_db(medical_bytes, income_bytes, medical_filename, income_filename):
+async def store_documents_in_db(combinedDocument, combinedDocumentName):
     """
     Store PDF documents in MongoDB and return document references
     """
+    
     try:
-        documents = []
+        document = ""
+        print("MADE IT HERE")
+        print(document)
         
-        # Store medical records
         medical_doc = {
-            "filename": medical_filename,
+            "filename": combinedDocumentName,
             "content_type": "application/pdf",
-            "data": Binary(medical_bytes),
+            "data": Binary(combinedDocument),
             "uploaded_at": datetime.utcnow(),
             "document_type": "medical_records"
         }
-        medical_result = await db.documents.insert_one(medical_doc)
-        documents.append({
-            "document_id": str(medical_result),
-            "filename": medical_filename,
-            "document_type": "medical_records"
-        })
-        
-        # Store income documents
-        income_doc = {
-            "filename": income_filename,
-            "content_type": "application/pdf",
-            "data": Binary(income_bytes),
-            "uploaded_at": datetime.utcnow(),
-            "document_type": "income_documents"
+        combined_result = await db.documents.insert_one(medical_doc)
+        documents = {
+            "document_id": str(combined_result),
+            "filename": combinedDocumentName,
+            "document_type": "combined_document"
         }
-        income_result = await db.documents.insert_one(income_doc)
-        documents.append({
-            "document_id": str(income_result),
-            "filename": income_filename,
-            "document_type": "income_documents"
-        })
-        
-        return documents
+        print("MADE IT HERE")
+        print(document)
+        return document
+    
     except Exception as e:
         print(f"❌ Error storing documents: {e}")
-        return []
+        return ""
 
 # --------------------------------------------------------
 # Save application to MongoDB
 # --------------------------------------------------------
-async def save_application_to_db(json_result, documents, raw_response):
+async def save_application_to_db(json_result, document, raw_response):
     """
     Save the SSDI application analysis to MongoDB with required fields
     """
@@ -90,7 +218,7 @@ async def save_application_to_db(json_result, documents, raw_response):
         # Prepare the document to insert
         application_doc = {
             "application_id": application_id,
-            "documents": documents,
+            "documents": document,
             "claude_confidence_level": json_result.get("confidence_level", 0),
             "claude_summary": json_result.get("summary", ""),
             "final_decision": json_result.get("recommendation", "UNKNOWN"),
@@ -259,18 +387,27 @@ async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
 
                 # Store documents in MongoDB
                 print("\n📄 Storing documents in MongoDB...")
-                documents = await store_documents_in_db(
-                    medical_bytes, 
-                    income_bytes, 
-                    medical_filename, 
-                    income_filename
+                
+                combinedDoc = await merge_pdfs(
+                    {"firstName":form_data["firstName"], 
+                     "lastName":form_data["lastName"], 
+                     "dateOfBirth":form_data["dateOfBirth"], 
+                     "socialSecurityNumber":form_data["socialSecurityNumber"], 
+                     "streetAddress":form_data["address"], 
+                     "city":form_data["city"], 
+                     "state":form_data["state"], 
+                     "zipCode":form_data["zipCode"]},
+                    [medical_bytes, income_bytes])
+                
+                document = await store_documents_in_db(
+                    combinedDoc, "combined_document.pdf"
                 )
                 
                 # Save application to MongoDB
                 print("\n💾 Saving application to MongoDB...")
                 application_id = await save_application_to_db(
                     jsonResult, 
-                    documents, 
+                    document, 
                     response_text
                 )
                 
@@ -281,7 +418,7 @@ async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
                     "success": True,
                     "application_id": application_id,
                     "result": jsonResult,
-                    "documents": documents,
+                    "document": document,
                     "raw_response": response_text
                 }
                 
