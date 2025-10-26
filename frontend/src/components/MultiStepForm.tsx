@@ -738,19 +738,16 @@ export default function MultiStepForm() {
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <button
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 ${
-            currentStep === 1
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Previous</span>
-        </button>
+      <div className="flex justify-end gap-4">
+        {currentStep > 1 && (
+          <button
+            onClick={prevStep}
+            className="px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Previous</span>
+          </button>
+        )}
 
         {currentStep < steps.length ? (
           <button
