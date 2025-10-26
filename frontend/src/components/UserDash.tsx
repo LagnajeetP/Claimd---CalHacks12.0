@@ -410,8 +410,10 @@ export default function UserDash() {
                         <div>
                           <div className="mb-2 flex items-center space-x-3">
                             <span className="text-sm font-light text-gray-600 uppercase tracking-wider">Approval Likeliness</span>
-                            <span className={`font-light text-lg ${getConfidenceColor(app.claude_confidence_level)}`}>
-                              {Math.round(app.claude_confidence_level * 100)}%
+                            <span className={`font-light text-lg ${app.claude_recommendation === 'deny' ? 'text-red-600' : getConfidenceColor(app.claude_confidence_level)}`}>
+                              {app.claude_recommendation === 'deny' 
+                                ? Math.round((1 - app.claude_confidence_level) * 100)
+                                : Math.round(app.claude_confidence_level * 100)}%
                             </span>
                           </div>
                           <div className="space-y-2">
