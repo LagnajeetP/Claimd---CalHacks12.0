@@ -39,50 +39,83 @@ export default function AdminDash() {
       try {
         setLoading(true);
         
-        // Fetch from backend API
-        const response = await fetch('http://localhost:8000/api/applications', {
+        // Step 1: Fetch all users
+        const usersResponse = await fetch('http://localhost:8000/api/users/all', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
         
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Fetched applications from API:', result);
-          
-          if (result.data.success && result.data.applications) {
-            // Map backend data to frontend format
-            const mappedApplications = result.data.applications.map((app: any) => {
-              // Convert backend recommendation format to frontend format
-              const backendDecision = app.final_decision || app.claude_recommendation || '';
-              let recommendation = 'further_review'; // default
-              
-              if (backendDecision.toUpperCase() === 'APPROVE') {
-                recommendation = 'approve';
-              } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
-                recommendation = 'deny';
-              } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
-                recommendation = 'further_review';
-              }
-              
-              return {
-                application_id: app.application_id,
-                documents: app.documents || [],
-                claude_confidence_level: app.claude_confidence_level,
-                claude_summary: app.claude_summary,
-                claude_recommendation: recommendation,
-                applicant_name: app.personal_information?.name || 'Unknown',
-                applicant_ssn: app.personal_information?.social_security_number || ''
-              };
-            });
-            setApplications(mappedApplications);
-          } else {
-            throw new Error('Invalid API response');
-          }
-        } else {
-          throw new Error('API response not ok');
+        if (!usersResponse.ok) {
+          throw new Error('Failed to fetch users');
         }
+        
+        const usersResult = await usersResponse.json();
+        console.log('Fetched users from API:', usersResult);
+        
+        if (!usersResult.success || !usersResult.users) {
+          throw new Error('Invalid users API response');
+        }
+        
+        // Step 2: For each user, fetch their applications
+        const allApplicationsWithUsers: Application[] = [];
+        
+        for (const user of usersResult.users) {
+          // Skip users with no applications
+          if (user.application_count === 0) {
+            continue;
+          }
+          
+          // Fetch applications for this user by SSN
+          const appResponse = await fetch(`http://localhost:8000/api/user/applications/${user.ssn}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (appResponse.ok) {
+            const appResult = await appResponse.json();
+            console.log(`Fetched applications for ${user.name}:`, appResult);
+            
+            if (appResult.data.success && appResult.data.applications) {
+              // Map backend data to frontend format, including user name
+              const mappedApplications = appResult.data.applications.map((app: any) => {
+                // Convert backend recommendation format to frontend format
+                const backendDecision = app.final_decision || app.claude_recommendation || '';
+                let recommendation = 'further_review'; // default
+                
+                if (backendDecision.toUpperCase() === 'APPROVE') {
+                  recommendation = 'approve';
+                } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
+                  recommendation = 'deny';
+                } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
+                  recommendation = 'further_review';
+                }
+                
+                return {
+                  application_id: app.application_id,
+                  documents: app.documents || [],
+                  claude_confidence_level: app.claude_confidence_level,
+                  claude_summary: app.claude_summary,
+                  claude_recommendation: recommendation,
+                  user_name: user.name, // Populated from user data
+                  user_ssn: user.ssn,
+                  applicant_name: user.name // For backwards compatibility
+                };
+              });
+              
+              allApplicationsWithUsers.push(...mappedApplications);
+            }
+          } else {
+            console.warn(`Failed to fetch applications for user ${user.name}`);
+          }
+        }
+        
+        setApplications(allApplicationsWithUsers);
+        console.log('Total applications loaded:', allApplicationsWithUsers.length);
+        
       } catch (error) {
         console.error('API call failed:', error);
         // No fallback - only show real data from backend

@@ -3,7 +3,7 @@
 
 # Import Separate Files
 from api.ai.ai import ai
-from api.read.read import read, read_application_by_id, read_all_applications, read_applications_by_user_ssn, update_application_status
+from api.read.read import read, read_application_by_id, read_all_applications, read_applications_by_user_ssn, update_application_status, read_all_users
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -121,20 +121,8 @@ async def getAllApplications():
 # FUNCTIONALITY: Debug endpoint to see all users
 @app.get("/api/users/all")
 async def getAllUsers():
-    try:
-        from backend.api.connectDB import get_db
-        db = await get_db()
-        users = []
-        async for user in db.users.find():
-            users.append({
-                "user_id": user.get("user_id"),
-                "name": user.get("name"),
-                "ssn": user.get("socialSecurityNumber"),
-                "application_count": len(user.get("applications", []))
-            })
-        return {"success": True, "users": users, "count": len(users)}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    result = await read_all_users()
+    return result
 
 # REQUEST: SSN to look up user applications
 # RESPONSE: All applications for a specific user

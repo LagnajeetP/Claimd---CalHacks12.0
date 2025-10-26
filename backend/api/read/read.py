@@ -159,6 +159,31 @@ async def update_application_status(application_id: str, status: str, admin_note
         return {"success": False, "error": str(e)}
 
 
+async def read_all_users():
+    """
+    Get all users with basic info (no full application data)
+    """
+    try:
+        print("Fetching all users")
+        
+        users_cursor = db.users.find({})
+        users = []
+        
+        async for user in users_cursor:
+            users.append({
+                "user_id": user.get("user_id"),
+                "name": user.get("name"),
+                "ssn": user.get("socialSecurityNumber"),
+                "application_count": len(user.get("applications", []))
+            })
+        
+        return {"success": True, "users": users, "count": len(users)}
+    
+    except Exception as e:
+        print(f"❌ Error in read_all_users(): {e}")
+        return {"success": False, "error": str(e)}
+
+
 async def read():
     """
     Get all users and all their applications (full data)
