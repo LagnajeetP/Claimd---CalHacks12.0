@@ -51,7 +51,6 @@ const initialFormData: FormData = {
 export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [ssnFocused, setSsnFocused] = useState(false);
   const [ssnDisplayValue, setSsnDisplayValue] = useState('');
@@ -157,58 +156,37 @@ export default function MultiStepForm() {
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value instanceof File) {
-          submitData.append(key, value);
-        } else {
-          submitData.append(key, String(value));
-        }
-      });
-
-      // Make POST request to your API
-      const response = await fetch('http://localhost:8000/api/benefit-application', {
-        method: 'POST',
-        body: submitData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Application submitted successfully:', result);
-        
-        // Store user data in cookie for automatic login
-        if (result.applicant) {
-          const userData = {
-            name: result.applicant.name,
-            ssn: result.applicant.ssn
-          };
-          Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
-        }
-        
-        alert('Application submitted successfully! You will be redirected to your dashboard.');
-        setIsSubmitted(true);
-        // Reset form or redirect
-        setFormData(initialFormData);
-        setCurrentStep(1);
-        
-        // Redirect to user dashboard after a short delay
-        setTimeout(() => {
-          window.location.href = '/user';
-        }, 2000);
+    // Show success message immediately
+    setIsSubmitted(true);
+    
+    // Store user data in cookie for automatic login
+    const userData = {
+      name: `${formData.firstName} ${formData.lastName}`,
+      ssn: formData.socialSecurityNumber
+    };
+    Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
+    
+    // Redirect to user dashboard after a short delay
+    setTimeout(() => {
+      window.location.href = '/user';
+    }, 2000);
+    
+    // Send data to backend in the background (fire and forget)
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value instanceof File) {
+        submitData.append(key, value);
       } else {
-        throw new Error('Failed to submit application');
+        submitData.append(key, String(value));
       }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Failed to submit application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
+    
+    fetch('http://localhost:8000/api/benefit-application', {
+      method: 'POST',
+      body: submitData,
+    }).catch(error => {
+      console.error('Error submitting form to backend:', error);
+    });
   };
 
   const isStepComplete = (step: number): boolean => {
@@ -783,14 +761,9 @@ export default function MultiStepForm() {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 ${
-              isSubmitting
-                ? 'bg-gray-400 text-white cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
+            className="px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 bg-green-600 text-white hover:bg-green-700"
           >
-            <span>{isSubmitting ? 'Submitting...' : 'Submit Application'}</span>
+            <span>Submit Application</span>
             <ArrowRight className="w-5 h-5" />
           </button>
         )}
