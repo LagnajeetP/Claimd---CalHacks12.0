@@ -19,6 +19,7 @@ class ReadRequest(BaseModel):
 
 class ReadResponse(BaseModel):
     data: Dict[str, Any]
+
 class WriteResponse(BaseModel):
     decision: str
     confidence: float
@@ -29,38 +30,14 @@ class WriteResponse(BaseModel):
 
 app = FastAPI()
 
-# REQUEST: 
-# RESPONSE: 
-# FUNCTIONALITY: 
-@app.post("/write", response_model=WriteResponse)
-async def mainAI(medicalRecordsFile: UploadFile = File(...),
-    incomeDocumentsFile: UploadFile = File(...),
-    firstName: str = Form(...),
-    lastName: str = Form(...),
-    address: str = Form(...),
-    dateOfBirth: str = Form(...),
-    socialSecurityNumber: str = Form(...)
-):
-        # Read uploaded files as bytes
-    medical_pdf_bytes = await medicalRecordsFile.read()
-    income_pdf_bytes = await incomeDocumentsFile.read()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Call your AI function with all inputs
-    result = await ai(
-        medical_pdf_bytes=medical_pdf_bytes,
-        income_pdf_bytes=income_pdf_bytes,
-        first_name=firstName,
-        last_name=lastName,
-        address=address,
-        date_of_birth=dateOfBirth,
-        social_security_number=socialSecurityNumber
-    )
-
-    return WriteResponse(**result)
-
-<<<<<<<<< Temporary merge branch 1
-
-=========
 # REQUEST: MultiStepForm data with file uploads
 # RESPONSE: Processing results with MongoDB document IDs
 # FUNCTIONALITY: Process form data and upload to MongoDB with ordered fields
@@ -89,27 +66,48 @@ async def handle_benefit_application(
             "socialSecurityNumber": socialSecurityNumber,
         }
         
+        # Call AI function
         result = await ai(
             form_data,
             medicalRecordsFile,
             incomeDocumentsFile
         )
-        if not result:
-            return
         
-        if result["success"]:
-            return {
-                "success": True,}
-        else:
-            raise HTTPException(status_code=500, detail=result["error"])
+        # Check if AI processing was successful
+        if not result or not result.get("success"):
+            error_msg = result.get("error", "Unknown error") if result else "No response from AI"
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        # Extract the JSON result from AI analysis
+        json_result = result.get("result", {})
+        
+        # TODO: Save to database here
+        # You can access fields like:
+        # - json_result["recommendation"]
+        # - json_result["confidence_level"]
+        # - json_result["summary"]
+        # - json_result["ssdi_amount"]
+        # - etc.
+        
+        return {
+            "success": True,
+            "message": "Application processed successfully",
+            "analysis": json_result,
+            "applicant": {
+                "name": f"{firstName} {lastName}",
+                "ssn": socialSecurityNumber
+            }
+        }
             
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error in benefit application endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-# REQUEST: 
-# RESPONSE: 
-# FUNCTIONALITY: 
+# REQUEST: SSN to look up
+# RESPONSE: Data from database
+# FUNCTIONALITY: Read existing application data
 @app.post("/read", response_model=ReadResponse)
 async def mainRead(request: ReadRequest):
     result = await read(request.ssn)
@@ -119,4 +117,4 @@ async def mainRead(request: ReadRequest):
 
 if __name__ == "__main__":
     # This runs the app when you do `python main.py`
-  uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

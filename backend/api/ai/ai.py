@@ -30,88 +30,99 @@ def load_prompt() -> str:
 # MAIN AI FUNCTION
 # --------------------------------------------------------
 async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
-    # Read file contents
-    medical_bytes = await medicalRecordsFile.read()
-    income_bytes = await incomeDocumentsFile.read()
-    
-    # Load prompt
-    prompt = load_prompt()
-    
-    # Encode files to base64
-    medical_base64 = base64.standard_b64encode(medical_bytes).decode("utf-8")
-    income_base64 = base64.standard_b64encode(income_bytes).decode("utf-8")
-    
-    # Determine media types
-    medical_media_type = medicalRecordsFile.content_type or "application/pdf"
-    income_media_type = incomeDocumentsFile.content_type or "application/pdf"
-    
-    # Create message - prompt is the ONLY text, files are just attached
-    message = client.messages.create(
-        model="claude-sonnet-4-5-20250929",
-        max_tokens=8000,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": prompt  # Your prompt.md is the ONLY text
-                    },
-                    {
-                        "type": "document",
-                        "source": {
-                            "type": "base64",
-                            "media_type": medical_media_type,
-                            "data": medical_base64
-                        }
-                    },
-                    {
-                        "type": "document",
-                        "source": {
-                            "type": "base64",
-                            "media_type": income_media_type,
-                            "data": income_base64
-                        }
-                    }
-                ]
-            }
-        ]
-    )
-    
-    # Handle response - filter out thinking blocks
-    response_text = ""
-    for block in message.content:
-        if block.type == "text":
-            response_text += block.text
-    
-    print(response_text)
-    
-    json_match = re.search(r'<START_OUTPUT>(.*?)<END_OUTPUT>', response_text, re.DOTALL)
-    json_result = ""
-
-    if json_match:
-        json_str = json_match.group(1).strip()
+    try:
+        # Read file contents
+        medical_bytes = await medicalRecordsFile.read()
+        income_bytes = await incomeDocumentsFile.read()
         
-        json_str = re.sub(r'^```json\s*', '', json_str)
-        json_str = re.sub(r'\s*```$', '', json_str)
-    
-        try:
-            jsonResult = json.loads(json_str)
+        # Load prompt
+        prompt = load_prompt()
+        
+        # Encode files to base64
+        medical_base64 = base64.standard_b64encode(medical_bytes).decode("utf-8")
+        income_base64 = base64.standard_b64encode(income_bytes).decode("utf-8")
+        
+        # Determine media types
+        medical_media_type = medicalRecordsFile.content_type or "application/pdf"
+        income_media_type = incomeDocumentsFile.content_type or "application/pdf"
+        
+        # Create streaming message
+        response_text = ""
+        
+        with client.messages.stream(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=8000,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "base64",
+                                "media_type": medical_media_type,
+                                "data": medical_base64
+                            }
+                        },
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "base64",
+                                "media_type": income_media_type,
+                                "data": income_base64
+                            }
+                        }
+                    ]
+                }
+            ]
+        ) as stream:
+            for text in stream.text_stream:
+                response_text += text
+                print(text, end="", flush=True)  # Stream to console
+        
+        print("\n\n--- PROCESSING COMPLETE ---\n")
+        
+        # Extract JSON after streaming is complete
+        json_match = re.search(r'<START_OUTPUT>(.*?)<END_OUTPUT>', response_text, re.DOTALL)
+
+        if json_match:
+            json_str = json_match.group(1).strip()
             
-        except json.JSONDecodeError as e:
-            print(f"❌ JSON parsing error: {e}")
-            print(f"Raw JSON string: {json_str[:500]}...")  # Print first 500 chars for debugging
+            json_str = re.sub(r'^```json\s*', '', json_str)
+            json_str = re.sub(r'\s*```$', '', json_str)
+        
+            try:
+                jsonResult = json.loads(json_str)
+                print("✅ JSON parsed successfully")
+                
+                return {
+                    "success": True,
+                    "result": jsonResult,
+                    "raw_response": response_text
+                }
+                
+            except json.JSONDecodeError as e:
+                print(f"❌ JSON parsing error: {e}")
+                return {
+                    "success": False,
+                    "error": f"Failed to parse JSON response: {str(e)}",
+                    "raw_response": response_text
+                }
+        else:
+            print("❌ Could not find <START_OUTPUT> and <END_OUTPUT> tags in response")
             return {
-                "error": "Failed to parse JSON response",
+                "success": False,
+                "error": "Output tags not found in response",
                 "raw_response": response_text
             }
-    else:
-        print("❌ Could not find <START_OUTPUT> and <END_OUTPUT> tags in response")
+            
+    except Exception as e:
+        print(f"❌ Error in AI function: {e}")
         return {
-            "error": "Output tags not found in response",
-            "raw_response": response_text
+            "success": False,
+            "error": str(e)
         }
-
-    print(json_result)
-    
-    
