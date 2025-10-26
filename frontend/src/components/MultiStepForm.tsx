@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Upload, FileText, User, Heart, DollarSign, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle, ArrowRight, ArrowLeft, Upload, FileText, User, Heart, DollarSign, Shield, AlertCircle } from 'lucide-react';
 
 interface FormData {
   // Personal Information
@@ -51,6 +51,7 @@ export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [ssnFocused, setSsnFocused] = useState(false);
   const [ssnDisplayValue, setSsnDisplayValue] = useState('');
 
@@ -177,6 +178,7 @@ export default function MultiStepForm() {
 
       if (response.ok) {
         alert('Application submitted successfully!');
+        setIsSubmitted(true);
         // Reset form or redirect
         setFormData(initialFormData);
         setCurrentStep(1);
@@ -240,7 +242,7 @@ export default function MultiStepForm() {
                   {formData.firstName && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                       {validateField('firstName', formData.firstName).isValid ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
@@ -269,7 +271,7 @@ export default function MultiStepForm() {
                   {formData.lastName && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                       {validateField('lastName', formData.lastName).isValid ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
@@ -298,7 +300,7 @@ export default function MultiStepForm() {
                 {formData.dateOfBirth && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     {validateField('dateOfBirth', formData.dateOfBirth).isValid ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : (
                       <AlertCircle className="w-5 h-5 text-red-500" />
                     )}
@@ -327,7 +329,7 @@ export default function MultiStepForm() {
                 {formData.address && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     {validateField('address', formData.address).isValid ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : (
                       <AlertCircle className="w-5 h-5 text-red-500" />
                     )}
@@ -357,7 +359,7 @@ export default function MultiStepForm() {
                   {formData.city && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                       {validateField('city', formData.city).isValid ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
@@ -386,7 +388,7 @@ export default function MultiStepForm() {
                   {formData.state && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                       {validateField('state', formData.state).isValid ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
@@ -415,7 +417,7 @@ export default function MultiStepForm() {
                   {formData.zipCode && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                       {validateField('zipCode', formData.zipCode).isValid ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-5 h-5 text-green-500" />
                       ) : (
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
@@ -460,7 +462,7 @@ export default function MultiStepForm() {
                 {formData.socialSecurityNumber && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     {validateField('socialSecurityNumber', formData.socialSecurityNumber).isValid ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : (
                       <AlertCircle className="w-5 h-5 text-red-500" />
                     )}
@@ -690,38 +692,40 @@ export default function MultiStepForm() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Progress Timeline */}
       <div className="mb-12">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between relative">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isComplete = isStepComplete(step.id);
             const isCurrent = currentStep === step.id;
+            // For step 4 (Review & Submit), make it green only after successful submission
+            const showAsComplete = step.id === 4 ? isSubmitted : isComplete;
+            const isPast = currentStep > step.id || showAsComplete;
             
             return (
-              <div key={step.id} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
-                    isComplete 
-                      ? 'bg-green-500 border-green-500 text-white' 
+              <div key={step.id} className="flex items-center relative flex-1">
+                <div className="flex flex-col items-center relative z-10">
+                  {/* Icon Circle */}
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                    showAsComplete 
+                      ? 'bg-green-500 border-green-500 text-white scale-110' 
                       : isCurrent 
-                        ? 'bg-blue-500 border-blue-500 text-white' 
+                        ? 'bg-blue-500 border-blue-500 text-white scale-110' 
                         : 'bg-white border-gray-300 text-gray-400'
                   }`}>
-                    {isComplete ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+                    {showAsComplete ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
                   </div>
+                  
+                  {/* Label */}
                   <div className="mt-2 text-center">
-                    <p className={`text-sm font-medium ${
-                      isCurrent ? 'text-blue-600' : isComplete ? 'text-green-600' : 'text-gray-500'
+                    <p className={`text-sm font-medium transition-colors duration-300 ${
+                      isCurrent ? 'text-blue-600' : showAsComplete ? 'text-green-600' : 'text-gray-500'
                     }`}>
                       {step.title}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">{step.description}</p>
                   </div>
                 </div>
-                {index < steps.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-4 ${
-                    isComplete ? 'bg-green-500' : 'bg-gray-300'
-                  }`} />
-                )}
+                
               </div>
             );
           })}
@@ -734,19 +738,16 @@ export default function MultiStepForm() {
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <button
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 ${
-            currentStep === 1
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Previous</span>
-        </button>
+      <div className="flex justify-end gap-4">
+        {currentStep > 1 && (
+          <button
+            onClick={prevStep}
+            className="px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Previous</span>
+          </button>
+        )}
 
         {currentStep < steps.length ? (
           <button

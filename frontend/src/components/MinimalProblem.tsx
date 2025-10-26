@@ -1,7 +1,9 @@
 export default function MinimalProblem() {
   return (
-    <section className="min-h-screen bg-white text-gray-900 flex items-center justify-center py-32 px-6">
-      <div className="max-w-6xl mx-auto w-full">
+    <section className="min-h-screen bg-transparent relative z-20 text-gray-900 flex items-center justify-center py-32 px-6">
+      {/* Slight backdrop for readability */}
+      <div className="absolute inset-0 bg-white/40 backdrop-blur-sm"></div>
+      <div className="max-w-6xl mx-auto w-full relative z-10">
         <div className="text-center mb-32">
           <div className="text-sm text-gray-500 uppercase tracking-widest mb-8">The Problem</div>
           <h2 className="text-5xl md:text-7xl font-thin mb-8 text-gray-900">
@@ -46,15 +48,6 @@ export default function MinimalProblem() {
             </p>
             <div className="text-xs text-gray-500 uppercase tracking-wider">Higher error rates</div>
           </div>
-        </div>
-
-        {/* Final emphasis */}
-        <div className="border-t border-gray-300 pt-16 text-center">
-          <div className="mb-4">
-            <span className="text-8xl md:text-9xl font-thin text-gray-900">7</span>
-            <span className="text-4xl md:text-5xl font-thin text-gray-400"> months</span>
-          </div>
-          <p className="text-lg text-gray-600 font-light">of uncertainty</p>
         </div>
       </div>
     </section>
