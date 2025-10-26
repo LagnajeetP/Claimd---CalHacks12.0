@@ -28,8 +28,8 @@ export default function UserDash() {
   const [databaseUser, setDatabaseUser] = useState<DatabaseUser | null>(null);
   const [formData, setFormData] = useState({ name: '', ssn: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [ssnFocused, setSsnFocused] = useState(false);
   const [ssnDisplayValue, setSsnDisplayValue] = useState('');
+  const [userDatabase, setUserDatabase] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const getRecommendationColor = (recommendation: string) => {
@@ -96,10 +96,36 @@ export default function UserDash() {
 
   const searchUserInDatabase = (name: string, ssn: string): DatabaseUser | null => {
     const cleanSSN = ssn.replace(/\D/g, '');
-    return sampleData.find(user => 
+    return userDatabase.find(user => 
       user.name.toLowerCase() === name.toLowerCase() && 
       user.ssn.replace(/\D/g, '') === cleanSSN
     ) || null;
+  };
+
+  const fetchUserData = async () => {
+    try {
+      // Try to fetch from API first
+      const response = await fetch('/api/users', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const apiData = await response.json();
+        console.log('Fetched data from API:', apiData);
+        setUserDatabase(apiData);
+        return apiData;
+      } else {
+        throw new Error('API response not ok');
+      }
+    } catch (error) {
+      console.log('API call failed, using sample data:', error);
+      // Fallback to sample data
+      setUserDatabase(sampleData);
+      return sampleData;
+    }
   };
 
   const handleSignIn = (e: React.FormEvent) => {
@@ -133,29 +159,30 @@ export default function UserDash() {
     setSsnDisplayValue(formatted);
   };
 
-  const handleSSNFocus = () => {
-    setSsnFocused(true);
-  };
-
-  const handleSSNBlur = () => {
-    setSsnFocused(false);
-  };
 
   useEffect(() => {
-    const savedUserData = Cookies.get('userData');
-    if (savedUserData) {
-      try {
-        const parsed = JSON.parse(savedUserData);
-        setUserData(parsed);
-        
-        const foundUser = searchUserInDatabase(parsed.name, parsed.ssn);
-        setDatabaseUser(foundUser);
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        Cookies.remove('userData');
+    const initializeData = async () => {
+      // Fetch user data (API or fallback to sample)
+      await fetchUserData();
+      
+      // Check for saved user data
+      const savedUserData = Cookies.get('userData');
+      if (savedUserData) {
+        try {
+          const parsed = JSON.parse(savedUserData);
+          setUserData(parsed);
+          
+          const foundUser = searchUserInDatabase(parsed.name, parsed.ssn);
+          setDatabaseUser(foundUser);
+        } catch (error) {
+          console.error('Error parsing saved user data:', error);
+          Cookies.remove('userData');
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initializeData();
   }, []);
 
   if (isLoading) {
@@ -213,8 +240,6 @@ export default function UserDash() {
                   id="ssn"
                   value={ssnDisplayValue}
                   onChange={handleSSNChange}
-                  onFocus={handleSSNFocus}
-                  onBlur={handleSSNBlur}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 font-mono"
                   placeholder="XXX-XX-XXXX"
                   maxLength={11}
@@ -260,8 +285,8 @@ export default function UserDash() {
               </div>
             </div>
             
-            {/* Side dropdown on hover */}
-            <div className="absolute left-full top-0 mt-16 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+            {/* Dropdown below avatar on hover */}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
               <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-4 min-w-[200px]">
                 <div className="space-y-2">
                   <div>
