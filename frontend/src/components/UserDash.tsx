@@ -17,6 +17,8 @@ interface Application {
   admin_status?: string;
   admin_notes?: string;
   status_updated_at?: string;
+  human_final?: boolean;
+  final_decision?: string;
 }
 
 interface DatabaseUser {
@@ -64,6 +66,43 @@ export default function UserDash() {
         return <AlertCircle className="w-4 h-4" />;
       default:
         return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getFinalDecisionStatus = (app: Application) => {
+    if (app.human_final && app.final_decision) {
+      if (app.final_decision.toUpperCase() === 'APPROVE') {
+        return 'Approved';
+      } else if (app.final_decision.toUpperCase() === 'REJECT') {
+        return 'Rejected';
+      }
+    }
+    return 'Unreviewed';
+  };
+
+  const getFinalDecisionColor = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return 'text-green-700 bg-green-100 border-green-300';
+      case 'Rejected':
+        return 'text-red-700 bg-red-100 border-red-300';
+      case 'Unreviewed':
+        return 'text-gray-700 bg-gray-100 border-gray-300';
+      default:
+        return 'text-gray-700 bg-gray-100 border-gray-300';
+    }
+  };
+
+  const getFinalDecisionIcon = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return <CheckCircle className="w-5 h-5" />;
+      case 'Rejected':
+        return <XCircle className="w-5 h-5" />;
+      case 'Unreviewed':
+        return <AlertCircle className="w-5 h-5" />;
+      default:
+        return <AlertCircle className="w-5 h-5" />;
     }
   };
 
@@ -149,7 +188,9 @@ export default function UserDash() {
               claude_recommendation: recommendation,
               admin_status: app.admin_status,
               admin_notes: app.admin_notes,
-              status_updated_at: app.status_updated_at
+              status_updated_at: app.status_updated_at,
+              human_final: app.human_final,
+              final_decision: app.final_decision
             };
           });
           
@@ -366,6 +407,11 @@ export default function UserDash() {
                             </span>
                           </div>
                           <div className="space-y-2">
+                            {/* Final Decision Status */}
+                            <div className={`inline-flex items-center space-x-2 px-4 py-2 border-2 text-sm font-medium rounded ${getFinalDecisionColor(getFinalDecisionStatus(app))}`}>
+                              {getFinalDecisionIcon(getFinalDecisionStatus(app))}
+                              <span>Final Decision: {getFinalDecisionStatus(app)}</span>
+                            </div>
                             {app.admin_status && (
                               <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getAdminStatusColor(app.admin_status)}`}>
                                 {getAdminStatusIcon(app.admin_status)}
