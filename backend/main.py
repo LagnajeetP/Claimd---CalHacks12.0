@@ -108,7 +108,7 @@ async def handle_benefit_application(
 # REQUEST: SSN to look up
 # RESPONSE: Data from database
 # FUNCTIONALITY: Read existing application data
-@app.post("/read", response_model=ReadResponse)
+@app.post("/api/read", response_model=ReadResponse)
 async def mainRead(request: ReadRequest):
     result = await read(request.ssn)
     

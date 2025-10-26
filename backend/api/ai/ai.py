@@ -16,8 +16,7 @@ from connectDB import db
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
 load_dotenv(dotenv_path)
 
-print("MADE IT HERE")
-print(os.getenv("CLAUDE_API_KEY"))
+
 client = anthropic.Anthropic(api_key=os.getenv("CLAUDE_API_KEY"))
 
 # --------------------------------------------------------
@@ -131,22 +130,22 @@ async def save_application_to_db(json_result, documents, raw_response):
 # --------------------------------------------------------
 # Create or update a user tied to an application
 # --------------------------------------------------------
-async def save_or_update_user(name: str, ssn: str, application_id: str):
+async def save_or_update_user(name: str, socialSecurityNumber: str, application_id: str):
     """
     Creates a new user if not found, otherwise appends the new application_id
     to their list of applications.
     """
     try:
         # Check if user already exists by SSN
-        existing_user = await db.users.find_one({"socialSecurityNumber": ssn})
+        existing_user = await db.users.find_one({"socialSecurityNumber": socialSecurityNumber})
 
         if existing_user:
             # Append new application_id if not already in list
             await db.users.update_one(
-                {"socialSecurityNumber": ssn},
+                {"socialSecurityNumber": socialSecurityNumber},
                 {"$addToSet": {"applications": application_id}}  # prevents duplicates
             )
-            print(f"✅ Updated existing user: {existing_user['name']} ({ssn})")
+            print(f"✅ Updated existing user: {existing_user['name']} ({socialSecurityNumber})")
             return {
                 "success": True,
                 "user_id": existing_user["user_id"],
@@ -158,7 +157,7 @@ async def save_or_update_user(name: str, ssn: str, application_id: str):
             user_doc = {
                 "user_id": str(uuid.uuid4()),
                 "name": name,
-                "SSN": ssn,
+                "socialSecurityNumber": socialSecurityNumber,
                 "applications": [application_id],
                 "created_at": datetime.utcnow()
             }
