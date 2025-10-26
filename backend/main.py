@@ -29,15 +29,38 @@ class WriteResponse(BaseModel):
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # or specify ["http://localhost:3000"] etc.
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# REQUEST: 
+# RESPONSE: 
+# FUNCTIONALITY: 
+@app.post("/write", response_model=WriteResponse)
+async def mainAI(medicalRecordsFile: UploadFile = File(...),
+    incomeDocumentsFile: UploadFile = File(...),
+    firstName: str = Form(...),
+    lastName: str = Form(...),
+    address: str = Form(...),
+    dateOfBirth: str = Form(...),
+    socialSecurityNumber: str = Form(...)
+):
+        # Read uploaded files as bytes
+    medical_pdf_bytes = await medicalRecordsFile.read()
+    income_pdf_bytes = await incomeDocumentsFile.read()
 
+    # Call your AI function with all inputs
+    result = await ai(
+        medical_pdf_bytes=medical_pdf_bytes,
+        income_pdf_bytes=income_pdf_bytes,
+        first_name=firstName,
+        last_name=lastName,
+        address=address,
+        date_of_birth=dateOfBirth,
+        social_security_number=socialSecurityNumber
+    )
 
+    return WriteResponse(**result)
+
+<<<<<<<<< Temporary merge branch 1
+
+=========
 # REQUEST: MultiStepForm data with file uploads
 # RESPONSE: Processing results with MongoDB document IDs
 # FUNCTIONALITY: Process form data and upload to MongoDB with ordered fields
