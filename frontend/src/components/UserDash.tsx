@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Plus, LogOut } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 interface UserData {
@@ -205,6 +205,7 @@ export default function UserDash() {
     Cookies.remove('userData');
     setUserData(null);
     setDatabaseUser(null);
+    navigate('/');
   };
 
 
@@ -313,46 +314,20 @@ export default function UserDash() {
   return (
     <div className="min-h-screen bg-white px-6 py-20 pt-32">
       <div className="max-w-4xl mx-auto">
-        {/* User Avatar */}
-        <div className="flex justify-center mb-8">
-          <div className="relative group">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-white relative overflow-hidden cursor-pointer">
-              {/* Animated floating bubbles */}
-              <div className="absolute top-4 left-6 w-3 h-3 bg-blue-300 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '2s' }}></div>
-              <div className="absolute top-8 right-8 w-2 h-2 bg-green-300 rounded-full animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '2.5s' }}></div>
-              <div className="absolute bottom-6 left-8 w-4 h-4 bg-white rounded-full animate-bounce" style={{ animationDelay: '1s', animationDuration: '3s' }}></div>
-              <div className="absolute bottom-8 right-6 w-2 h-2 bg-blue-200 rounded-full animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '2.2s' }}></div>
-              <div className="absolute top-12 left-12 w-3 h-3 bg-green-200 rounded-full animate-bounce" style={{ animationDelay: '2s', animationDuration: '2.8s' }}></div>
-              
-              {/* User initials */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-4xl font-bold text-gray-800 drop-shadow-lg">
-                  {getUserInitials(userData.name)}
-                </span>
-              </div>
+        {/* Header with Sign Out Button */}
+        <div className="mb-16">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl md:text-6xl font-thin text-gray-900 mb-2">My Dashboard</h1>
+              <p className="text-gray-600 font-light">View and manage your benefit applications</p>
             </div>
-            
-            {/* Dropdown below avatar on hover */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
-              <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-4 min-w-[200px]">
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Name</p>
-                    <p className="text-slate-800 font-semibold">{userData.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">SSN</p>
-                    <p className="text-slate-800 font-mono">***-**-{getLastFourSSN(userData.ssn)}</p>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full mt-3 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors duration-200"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center space-x-2 border border-gray-900 px-4 py-2 hover:bg-gray-900 hover:text-white transition-all duration-200 font-light text-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
 
