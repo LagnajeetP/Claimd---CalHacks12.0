@@ -156,9 +156,9 @@ export default function ApplicationDetail() {
                   <FileText className="w-5 h-5 text-slate-600" />
                   <h2 className="text-lg font-semibold text-slate-800">Document Viewer</h2>
                 </div>
-                {application.documents.length > 1 && (
+                {Array.isArray(application.documents) && application.documents.length > 1 && (
                   <div className="mt-3 flex space-x-2">
-                    {application.documents.map((_, index) => (
+                    {Array.isArray(application.documents) && application.documents.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => {
@@ -185,10 +185,10 @@ export default function ApplicationDetail() {
                       <FileText className="w-5 h-5 text-slate-600" />
                       <div>
                         <h3 className="text-sm font-medium text-slate-800">
-                          {application.documents[currentDocumentIndex]?.split('/').pop() || 'Document'}
+                          {Array.isArray(application.documents) && application.documents[currentDocumentIndex] ? application.documents[currentDocumentIndex]?.split('/').pop() || 'Document' : 'No Document Available'}
                         </h3>
                         <p className="text-xs text-slate-500">
-                          Document {currentDocumentIndex + 1} of {application.documents.length}
+                          Document {currentDocumentIndex + 1} of {Array.isArray(application.documents) ? application.documents.length : 0}
                         </p>
                       </div>
                     </div>
@@ -208,7 +208,7 @@ export default function ApplicationDetail() {
                           setCurrentDocumentIndex(Math.min(application.documents.length - 1, currentDocumentIndex + 1));
                           setPdfError(false);
                         }}
-                        disabled={currentDocumentIndex === application.documents.length - 1}
+                        disabled={!Array.isArray(application.documents) || currentDocumentIndex === application.documents.length - 1}
                         className="px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200"
                       >
                         Next
@@ -253,13 +253,23 @@ export default function ApplicationDetail() {
                       </div>
                     ) : (
                       <div className="w-full h-full">
-                        <iframe
-                          src={application.documents[currentDocumentIndex]}
-                          className="w-full h-full border-0"
-                          title={`Document ${currentDocumentIndex + 1}`}
-                          onLoad={() => setPdfError(false)}
-                          onError={() => setPdfError(true)}
-                        />
+                        {Array.isArray(application.documents) && application.documents.length > 0 && application.documents[currentDocumentIndex] ? (
+                          <iframe
+                            src={application.documents[currentDocumentIndex]}
+                            className="w-full h-full border-0"
+                            title={`Document ${currentDocumentIndex + 1}`}
+                            onLoad={() => setPdfError(false)}
+                            onError={() => setPdfError(true)}
+                          />
+                        ) : (
+                          <div className="h-full flex items-center justify-center bg-slate-50">
+                            <div className="text-center">
+                              <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                              <h3 className="text-lg font-medium text-slate-600 mb-2">No Documents Available</h3>
+                              <p className="text-slate-500">Documents are not yet uploaded for this application.</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -288,7 +298,7 @@ export default function ApplicationDetail() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">Documents Submitted</label>
-                  <p className="text-slate-800">{application.documents.length} documents</p>
+                  <p className="text-slate-800">{Array.isArray(application.documents) && application.documents.length > 0 ? application.documents.length : 0} {Array.isArray(application.documents) && application.documents.length === 1 ? 'document' : 'documents'}</p>
                 </div>
               </div>
             </div>

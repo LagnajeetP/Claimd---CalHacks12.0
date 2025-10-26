@@ -1,11 +1,12 @@
 // API service for admin dashboard operations
 export interface Application {
   application_id: string;
-  documents: string[];
+  documents: any[];
   claude_confidence_level: number;
   claude_summary: string;
   claude_recommendation: 'approve' | 'deny' | 'further_review';
   applicant_name?: string;
+  applicant_ssn?: string;
   ssn?: string;
 }
 
@@ -15,8 +16,8 @@ export interface Applicant {
   applications: Application[];
 }
 
-// Mock data - in real app this would come from backend
-const mockData: Applicant[] = [
+// Mock data - REMOVED - only using real backend data now
+/*const mockData: Applicant[] = [
   {
     "name": "Alice Johnson",
     "ssn": "123-45-6789",
@@ -124,7 +125,7 @@ const mockData: Applicant[] = [
       }
     ]
   }
-];
+];*/
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -132,31 +133,51 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export const api = {
   // Get all applications for admin dashboard
   async getAllApplications(): Promise<Application[]> {
-    await delay(500); // Simulate network delay
-    const allApplications = mockData.flatMap(applicant => 
-      applicant.applications.map(app => ({
-        ...app,
-        applicant_name: applicant.name,
-        ssn: applicant.ssn
-      }))
-    );
-    return allApplications;
+    // This function is deprecated - admin dashboard uses direct fetch now
+    return [];
   },
 
   // Get specific application by ID
   async getApplicationById(applicationId: string): Promise<Application | null> {
-    await delay(300);
-    for (const applicant of mockData) {
-      const application = applicant.applications.find(app => app.application_id === applicationId);
-      if (application) {
+    try {
+      const response = await fetch(`http://localhost:8000/api/application/${applicationId}`);
+      if (!response.ok) {
+        console.error('Failed to fetch application:', response.statusText);
+        return null;
+      }
+      const result = await response.json();
+      
+      if (result.data.success && result.data.application) {
+        const app = result.data.application;
+        
+        // Convert backend recommendation format to frontend format
+        const backendDecision = app.final_decision || app.claude_recommendation || '';
+        let recommendation: 'approve' | 'deny' | 'further_review' = 'further_review'; // default
+        
+        if (backendDecision.toUpperCase() === 'APPROVE') {
+          recommendation = 'approve';
+        } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
+          recommendation = 'deny';
+        } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
+          recommendation = 'further_review';
+        }
+        
         return {
-          ...application,
-          applicant_name: applicant.name,
-          ssn: applicant.ssn
+          application_id: app.application_id,
+          documents: app.documents || [],
+          claude_confidence_level: app.claude_confidence_level,
+          claude_summary: app.claude_summary,
+          claude_recommendation: recommendation,
+          applicant_name: app.personal_information?.name || 'Unknown',
+          applicant_ssn: app.personal_information?.social_security_number || '',
+          ssn: app.personal_information?.social_security_number || ''
         };
       }
+      return null;
+    } catch (error) {
+      console.error('Error fetching application:', error);
+      return null; // Only return backend data, no mock fallback
     }
-    return null;
   },
 
   // Approve application

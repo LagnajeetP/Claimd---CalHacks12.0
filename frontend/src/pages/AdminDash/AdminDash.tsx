@@ -13,15 +13,16 @@ import {
   LogOut
 } from 'lucide-react';
 import MinimalNavbar from '../../components/MinimalNavbar';
-import sampleData from '../../sample_api_call_db.json';
+// import sampleData from '../../sample_api_call_db.json'; // Removed - only using real backend data
 import Cookies from 'js-cookie';
 
 interface Application {
   application_id: string;
-  documents: string[];
+  documents: any[];
   claude_confidence_level: number;
   claude_summary: string;
   claude_recommendation: 'approve' | 'further_review' | 'deny';
+  applicant_name?: string;
   user_name?: string;
   user_ssn?: string;
 }
@@ -38,8 +39,8 @@ export default function AdminDash() {
       try {
         setLoading(true);
         
-        // Try to fetch from API first
-        const response = await fetch('/api/applications', {
+        // Fetch from backend API
+        const response = await fetch('http://localhost:8000/api/applications', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -47,23 +48,46 @@ export default function AdminDash() {
         });
         
         if (response.ok) {
-          const apiData = await response.json();
-          console.log('Fetched applications from API:', apiData);
-          setApplications(apiData);
+          const result = await response.json();
+          console.log('Fetched applications from API:', result);
+          
+          if (result.data.success && result.data.applications) {
+            // Map backend data to frontend format
+            const mappedApplications = result.data.applications.map((app: any) => {
+              // Convert backend recommendation format to frontend format
+              const backendDecision = app.final_decision || app.claude_recommendation || '';
+              let recommendation = 'further_review'; // default
+              
+              if (backendDecision.toUpperCase() === 'APPROVE') {
+                recommendation = 'approve';
+              } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
+                recommendation = 'deny';
+              } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
+                recommendation = 'further_review';
+              }
+              
+              return {
+                application_id: app.application_id,
+                documents: app.documents || [],
+                claude_confidence_level: app.claude_confidence_level,
+                claude_summary: app.claude_summary,
+                claude_recommendation: recommendation,
+                applicant_name: app.personal_information?.name || 'Unknown',
+                applicant_ssn: app.personal_information?.social_security_number || ''
+              };
+            });
+            setApplications(mappedApplications);
+          } else {
+            throw new Error('Invalid API response');
+          }
         } else {
           throw new Error('API response not ok');
         }
       } catch (error) {
-        console.log('API call failed, using sample data:', error);
-        // Fallback to sample data - flatten all applications from all users
-        const allApplications = sampleData.flatMap(user => 
-          user.applications.map(app => ({
-            ...app,
-            user_name: user.name,
-            user_ssn: user.ssn
-          }))
-        ) as Application[];
-        setApplications(allApplications);
+        console.error('API call failed:', error);
+        // No fallback - only show real data from backend
+        setApplications([]);
+        alert('Failed to load applications from backend. Please ensure the backend server is running.');
       } finally {
         setLoading(false);
       }
