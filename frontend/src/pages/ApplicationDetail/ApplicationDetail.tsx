@@ -204,9 +204,9 @@ export default function ApplicationDetail() {
         </div>
 
         {/* Two Column Layout */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-hidden">
           {/* PDF Viewer */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col max-h-[900px]">
             <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-slate-50 flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-slate-600" />
@@ -228,7 +228,7 @@ export default function ApplicationDetail() {
               )}
             </div>
 
-            <div className="flex-1 bg-slate-50 min-h-0 relative">
+            <div className="flex-1 bg-slate-50 overflow-hidden relative">
               {pdfSrc && !pdfError ? (
                 <embed
                   src={`${pdfSrc}#toolbar=0&navpanes=0&scrollbar=1`}
@@ -248,37 +248,9 @@ export default function ApplicationDetail() {
           </div>
 
           {/* Right Column */}
-          <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Summary</h3>
-              <p className="text-slate-700 text-xs leading-relaxed">{application.claude_summary}</p>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Recommendation</h3>
-              <div
-                className={`inline-flex items-center space-x-2 px-2 py-1 rounded-lg border text-xs ${getRecommendationColor(
-                  application.claude_recommendation
-                )}`}
-              >
-                {getRecommendationIcon(application.claude_recommendation)}
-                <span className="capitalize font-medium">
-                  {application.claude_recommendation || 'N/A'}
-                </span>
-              </div>
-              <div className="mt-2 text-xs">
-                Confidence:{' '}
-                <span
-                  className={`font-semibold ${getConfidenceColor(
-                    application.claude_confidence_level || 0
-                  )}`}
-                >
-                  {(application.claude_confidence_level * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 space-y-2 flex-shrink-0">
+          <div className="flex flex-col gap-2 min-h-0 h-full max-h-[700px]" >
+            {/* Approve/Deny Buttons */}
+            <div className="space-y-2 flex-shrink-0">
               <button
                 onClick={() => handleAction('approve')}
                 disabled={actionLoading === 'approve'}
@@ -303,6 +275,144 @@ export default function ApplicationDetail() {
                 )}
                 <span>Deny</span>
               </button>
+            </div>
+            
+            {/* Single Scrollable Section */}
+            <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
+              <div className="overflow-y-auto p-3 space-y-3 h-full">
+
+                {/* AI Recommendation */}
+                <div className="pt-3 border-t border-slate-200">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Recommendation</h3>
+                  <div
+                    className={`inline-flex items-center space-x-2 px-2 py-1 rounded-lg border text-xs ${getRecommendationColor(
+                      application.claude_recommendation
+                    )}`}
+                  >
+                    {getRecommendationIcon(application.claude_recommendation)}
+                    <span className="capitalize font-medium">
+                      {application.claude_recommendation || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs">
+                    Confidence:{' '}
+                    <span
+                      className={`font-semibold ${getConfidenceColor(
+                        application.claude_confidence_level || 0
+                      )}`}
+                    >
+                      {(application.claude_confidence_level * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* AI Summary */}
+                <div className="pt-3 border-t border-slate-200">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Summary</h3>
+                  <p className="text-slate-700 text-xs leading-relaxed">{application.claude_summary}</p>
+                </div>
+
+                {/* Phase Analysis Details */}
+                <div className="pt-3 border-t border-slate-200">
+                  <h2 className="text-sm font-semibold text-slate-800 mb-3">Phase Analysis Details</h2>
+                {/* Phase 1 */}
+                {application.phase_1_current_work?.finding && (
+                  <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-slate-800">Phase 1: Current Work Status</h3>
+                      {application.phase_1_current_work.status && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          application.phase_1_current_work.status === 'PASS' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {application.phase_1_current_work.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-700 text-xs leading-relaxed">{application.phase_1_current_work.finding}</p>
+                  </div>
+                )}
+
+                {/* Phase 2 */}
+                {application.phase_2_medical_severity?.finding && (
+                  <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-slate-800">Phase 2: Medical Severity</h3>
+                      {application.phase_2_medical_severity.status && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          application.phase_2_medical_severity.status === 'PASS' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {application.phase_2_medical_severity.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-700 text-xs leading-relaxed">{application.phase_2_medical_severity.finding}</p>
+                  </div>
+                )}
+
+                {/* Phase 3 */}
+                {application.phase_3_listings?.finding && (
+                  <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-slate-800">Phase 3: Listings Evaluation</h3>
+                      {application.phase_3_listings.status && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          application.phase_3_listings.status === 'APPROVE' 
+                            ? 'bg-green-100 text-green-700' 
+                            : application.phase_3_listings.status === 'DENY'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {application.phase_3_listings.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-700 text-xs leading-relaxed">{application.phase_3_listings.finding}</p>
+                  </div>
+                )}
+
+                {/* Phase 4 */}
+                {application.phase_4_rfc?.reason_cannot_assess && (
+                  <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-slate-800">Phase 4: Residual Functional Capacity</h3>
+                      {application.phase_4_rfc.status && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          application.phase_4_rfc.status.includes('PARTIAL') 
+                            ? 'bg-yellow-100 text-yellow-700' 
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {application.phase_4_rfc.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-700 text-xs leading-relaxed">{application.phase_4_rfc.reason_cannot_assess}</p>
+                  </div>
+                )}
+
+                {/* Phase 5 */}
+                {application.phase_5_vocational?.reason && (
+                  <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-slate-800">Phase 5: Vocational Assessment</h3>
+                      {application.phase_5_vocational.status && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          application.phase_5_vocational.status.includes('CANNOT') 
+                            ? 'bg-yellow-100 text-yellow-700' 
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {application.phase_5_vocational.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-700 text-xs leading-relaxed">{application.phase_5_vocational.reason}</p>
+                  </div>
+                )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

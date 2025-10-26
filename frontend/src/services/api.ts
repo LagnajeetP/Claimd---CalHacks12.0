@@ -8,6 +8,27 @@ export interface Application {
   applicant_name?: string;
   applicant_ssn?: string;
   socialSecurityNumber?: string;
+  // Phase data
+  phase_1_current_work?: {
+    finding?: string;
+    status?: string;
+  };
+  phase_2_medical_severity?: {
+    finding?: string;
+    status?: string;
+  };
+  phase_3_listings?: {
+    finding?: string;
+    status?: string;
+  };
+  phase_4_rfc?: {
+    reason_cannot_assess?: string;
+    status?: string;
+  };
+  phase_5_vocational?: {
+    reason?: string;
+    status?: string;
+  };
 }
 
 export interface Applicant {
@@ -170,7 +191,12 @@ export const api = {
           claude_recommendation: recommendation,
           applicant_name: app.personal_information?.name || 'Unknown',
           applicant_ssn: app.personal_information?.social_security_number || '',
-          ssn: app.personal_information?.social_security_number || ''
+          // Phase data
+          phase_1_current_work: app.phase_1_current_work,
+          phase_2_medical_severity: app.phase_2_medical_severity,
+          phase_3_listings: app.phase_3_listings,
+          phase_4_rfc: app.phase_4_rfc,
+          phase_5_vocational: app.phase_5_vocational,
         };
       }
       return null;
