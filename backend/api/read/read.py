@@ -81,38 +81,42 @@ async def read_all_applications():
         return {"success": False, "error": str(e)}
 
 
-async def read(ssn: str):
+async def read():
     """
-    Given an SSN, find the user and return:
-      - user info (name, SSN, etc.)
-      - list of all applications (full data)
+    Get all users and all their applications (full data)
     """
-    print(ssn)
     try:
-        # Look up user
-        user = await db.users.find_one({"socialSecurityNumber": ssn})
-        if not user:
-            return {"success": False, "error": f"No user found with socialSecurityNumber {ssn}"}
+        print("Fetching all users with their applications")
 
-        # Collect all applications for this user
-        app_ids = user.get("applications", [])
-        applications = []
+        users_cursor = db.users.find({})
+        users_with_apps = []
 
-        for app_id in app_ids:
-            app = await db.applications.find_one({"application_id": app_id})
-            if app:
-                applications.append(bson_to_json(app))
+        async for user in users_cursor:
+            # Extract application IDs for this user
+            app_ids = user.get("applications", [])
+            applications = []
 
-        # Combine results
-        response_data = {
+            # Fetch each application by ID
+            for app_id in app_ids:
+                app = await db.applications.find_one({"application_id": app_id})
+                if app:
+                    applications.append(bson_to_json(app))
+
+            # Add user + their applications to list
+            users_with_apps.append({
+                **bson_to_json(user),
+                "applications_full": applications,
+                "application_count": len(applications)
+            })
+
+        # Final response
+        return {
             "success": True,
-            "user": bson_to_json(user),
-            "applications": applications,
-            "application_count": len(applications)
+            "total_users": len(users_with_apps),
+            "users": users_with_apps
         }
-
-        return response_data
 
     except Exception as e:
         print(f"❌ Error in read(): {e}")
         return {"success": False, "error": str(e)}
+

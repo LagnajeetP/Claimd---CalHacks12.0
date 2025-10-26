@@ -103,8 +103,8 @@ async def handle_benefit_application(
 # RESPONSE: Data from database
 # FUNCTIONALITY: Read existing application data
 @app.post("/api/read", response_model=ReadResponse)
-async def mainRead(request: ReadRequest):
-    result = await read(request.ssn)
+async def mainRead():
+    result = await read()
     
     return ReadResponse(data=result)
 
