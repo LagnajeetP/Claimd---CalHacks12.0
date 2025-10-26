@@ -8,7 +8,7 @@ export default function MinimalNavbar() {
         <div className="flex justify-between items-center h-16">
           <Link 
             to="/" 
-            className="text-xl font-weight: 700; tracking-wide gradient-text italic"
+            className="text-xl font-weight: 1400; tracking-wide gradient-text italic"
           >
             Claimd
           </Link>
