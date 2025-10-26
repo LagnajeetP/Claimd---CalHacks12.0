@@ -9,7 +9,9 @@ function App() {
           <Route path="/" element={<pages.Landing />} />
           <Route path="/user" element={<pages.UserPage />} />
           <Route path="/user/form" element={<pages.UserFormPage />} />
+          <Route path="/user/detail/:applicationId" element={<pages.UserApplicationDetail />} />
           <Route path="/admin" element={<pages.AdminDash />} />
+          <Route path="/admin/detail/:applicationId" element={<pages.ApplicationDetail />} />
         </Routes>
       </div>
     </Router>

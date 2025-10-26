@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Zap, Shield, Clock } from 'lucide-react';
+import { Menu, X, Zap, Shield } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,15 +29,9 @@ export default function Navbar() {
             </Link>
             <Link 
               to="/user" 
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
             >
-              Apply Now
-            </Link>
-            <Link 
-              to="/admin" 
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-            >
-              Admin
+              Dashboard
             </Link>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Shield className="w-4 h-4" />
@@ -69,17 +63,10 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/user"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
+                className="block px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg mx-2 my-1 text-center font-medium"
                 onClick={() => setIsOpen(false)}
               >
-                Apply Now
-              </Link>
-              <Link
-                to="/admin"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                Admin
+                Dashboard
               </Link>
               <div className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600">
                 <Shield className="w-4 h-4" />

@@ -52,10 +52,10 @@ export default function HeroSection() {
               to="/user"
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2"
             >
-              <span>Apply Now</span>
+              <span>Access Dashboard</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <button className="bg-white text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-gray-300 hover:border-blue-600 hover:text-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2">
+            <button className="bg-gray-100 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-gray-300 hover:border-purple-600 hover:text-purple-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center space-x-2">
               <Shield className="w-5 h-5" />
               <span>See Demo</span>
             </button>

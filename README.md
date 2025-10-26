@@ -96,3 +96,42 @@ Frontend will be available at: `http://localhost:5173`
 
 - Press `Ctrl+C` in each terminal to stop the respective servers
 - Make sure to stop both backend and frontend servers when done
+
+## Admin Authentication Setup
+
+### Environment Variable Configuration
+
+Create a `.env.local` file in the **frontend** directory:
+
+```bash
+cd frontend
+echo "VITE_ADMIN_SSN=123-00-4572" > .env.local
+```
+
+### How Admin Authentication Works
+
+1. **Admin Login**: Use SSN `123-00-4572` with any name
+2. **Automatic Redirect**: Admin users are redirected to `/admin` dashboard
+3. **Fallback**: If env var not set, defaults to `123-00-4572` for development
+4. **Security**: Admin SSN not visible in source code
+
+### Testing Admin Access
+
+1. Go to user dashboard sign-in (`http://localhost:5173/user`)
+2. Enter any name and SSN `123-00-4572`
+3. Should automatically redirect to admin dashboard
+4. Regular users with other SSNs go to user dashboard as normal
+
+### Production Setup
+
+For production, set the environment variable:
+```bash
+VITE_ADMIN_SSN=your-secure-admin-ssn
+```
+
+### Important Notes
+
+- **File location**: `.env.local` goes in the `frontend/` directory
+- **Variable name**: Must start with `VITE_` to be accessible in the browser
+- **Restart required**: Restart your dev server after creating the file
+- **Git ignore**: `.env.local` should be in `.gitignore` (don't commit secrets)

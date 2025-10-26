@@ -43,12 +43,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link to="/user" className="text-gray-300 hover:text-white transition-colors duration-200">
-                  Apply Now
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin" className="text-gray-300 hover:text-white transition-colors duration-200">
-                  Admin Portal
+                  Dashboard
                 </Link>
               </li>
               <li>
