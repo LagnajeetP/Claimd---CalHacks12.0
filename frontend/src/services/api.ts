@@ -191,7 +191,12 @@ export const api = {
           claude_recommendation: recommendation,
           applicant_name: app.personal_information?.name || 'Unknown',
           applicant_ssn: app.personal_information?.social_security_number || '',
-          ssn: app.personal_information?.social_security_number || ''
+          // Phase data
+          phase_1_current_work: app.phase_1_current_work,
+          phase_2_medical_severity: app.phase_2_medical_severity,
+          phase_3_listings: app.phase_3_listings,
+          phase_4_rfc: app.phase_4_rfc,
+          phase_5_vocational: app.phase_5_vocational,
         };
       }
       return null;
