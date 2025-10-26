@@ -21,6 +21,11 @@ export default function ApplicationDetail() {
   const [pdfSrc, setPdfSrc] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState(false);
   const [actionLoading, setActionLoading] = useState<'approve' | 'deny' | null>(null);
+  const [actionResult, setActionResult] = useState<{
+    success: boolean;
+    message: string;
+    type: 'approve' | 'deny' | null;
+  } | null>(null);
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -31,29 +36,20 @@ export default function ApplicationDetail() {
         const data = await api.getApplicationById(applicationId);
         setApplication(data);
 
-        console.log(data)
-
-        // --- Handle different possible shapes of the document field ---
         let base64: string | null = null;
         const doc = data.document;
 
         if (!doc) {
           console.warn('⚠️ No document field found');
         } else if (typeof doc === 'string') {
-          // Example: Binary.createFromBase64('JVBERi0xLjQKJeLjz9M...', 0)
           const match = doc.match(/Binary\.createFromBase64\('([^']+)'/);
-          if (match) {
-            base64 = match[1];
-          } else if (doc.startsWith('JVBER')) {
-            // It's a direct base64 string
-            base64 = doc;
-          }
+          if (match) base64 = match[1];
+          else if (doc.startsWith('JVBER')) base64 = doc;
         } else if (doc.$binary?.base64) {
           base64 = doc.$binary.base64;
         }
 
         if (base64) {
-          // Create a proper data URI for the PDF
           const dataUrl = `data:application/pdf;base64,${base64}`;
           setPdfSrc(dataUrl);
         } else {
@@ -69,35 +65,27 @@ export default function ApplicationDetail() {
     fetchApplication();
   }, [applicationId]);
 
-  const handleApprove = async () => {
+  const handleAction = async (type: 'approve' | 'deny') => {
     if (!applicationId) return;
-    setActionLoading('approve');
+    setActionLoading(type);
     try {
-      const result = await api.approveApplication(applicationId);
-      if (result.success) {
-        alert(result.message);
-        navigate('/admin');
-      }
-    } catch (error) {
-      console.error('Error approving application:', error);
-      alert('Failed to approve application');
-    } finally {
-      setActionLoading(null);
-    }
-  };
+      const result =
+        type === 'approve'
+          ? await api.approveApplication(applicationId)
+          : await api.denyApplication(applicationId);
 
-  const handleDeny = async () => {
-    if (!applicationId) return;
-    setActionLoading('deny');
-    try {
-      const result = await api.denyApplication(applicationId);
-      if (result.success) {
-        alert(result.message);
-        navigate('/admin');
-      }
+      setActionResult({
+        success: result.success,
+        message: result.message || (type === 'approve' ? 'Application approved.' : 'Application denied.'),
+        type,
+      });
     } catch (error) {
-      console.error('Error denying application:', error);
-      alert('Failed to deny application');
+      console.error(`Error on ${type}:`, error);
+      setActionResult({
+        success: false,
+        message: `Failed to ${type} application.`,
+        type,
+      });
     } finally {
       setActionLoading(null);
     }
@@ -134,6 +122,44 @@ export default function ApplicationDetail() {
     if (confidence >= 0.6) return 'text-yellow-600';
     return 'text-red-600';
   };
+
+  // --- Confirmation Screen ---
+  if (actionResult) {
+    const isSuccess = actionResult.success;
+    const isApprove = actionResult.type === 'approve';
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-8 max-w-md">
+          {isSuccess ? (
+            <>
+              {isApprove ? (
+                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+              ) : (
+                <XCircle className="w-12 h-12 text-red-600 mx-auto mb-3" />
+              )}
+              <h2 className="text-lg font-semibold text-slate-800 mb-1">
+                {isApprove ? 'Application Approved' : 'Application Denied'}
+              </h2>
+              <p className="text-slate-600 text-sm mb-4">{actionResult.message}</p>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+              <h2 className="text-lg font-semibold text-slate-800 mb-1">Action Failed</h2>
+              <p className="text-slate-600 text-sm mb-4">{actionResult.message}</p>
+            </>
+          )}
+
+          <button
+            onClick={() => navigate('/admin')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -177,9 +203,9 @@ export default function ApplicationDetail() {
           </div>
         </div>
 
-        {/* Two Column Layout: PDF Left, Info Right */}
+        {/* Two Column Layout */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-          {/* Left: Document Viewer */}
+          {/* PDF Viewer */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
             <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-slate-50 flex-shrink-0">
               <div className="flex items-center space-x-2">
@@ -221,7 +247,7 @@ export default function ApplicationDetail() {
             </div>
           </div>
 
-          {/* Right: Summary & Actions */}
+          {/* Right Column */}
           <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Summary</h3>
@@ -230,15 +256,23 @@ export default function ApplicationDetail() {
 
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
               <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Recommendation</h3>
-              <div className={`inline-flex items-center space-x-2 px-2 py-1 rounded-lg border text-xs ${getRecommendationColor(application.claude_recommendation)}`}>
+              <div
+                className={`inline-flex items-center space-x-2 px-2 py-1 rounded-lg border text-xs ${getRecommendationColor(
+                  application.claude_recommendation
+                )}`}
+              >
                 {getRecommendationIcon(application.claude_recommendation)}
                 <span className="capitalize font-medium">
                   {application.claude_recommendation || 'N/A'}
                 </span>
               </div>
               <div className="mt-2 text-xs">
-                Confidence:{" "}
-                <span className={`font-semibold ${getConfidenceColor(application.claude_confidence_level || 0)}`}>
+                Confidence:{' '}
+                <span
+                  className={`font-semibold ${getConfidenceColor(
+                    application.claude_confidence_level || 0
+                  )}`}
+                >
                   {(application.claude_confidence_level * 100).toFixed(1)}%
                 </span>
               </div>
@@ -246,7 +280,7 @@ export default function ApplicationDetail() {
 
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 space-y-2 flex-shrink-0">
               <button
-                onClick={handleApprove}
+                onClick={() => handleAction('approve')}
                 disabled={actionLoading === 'approve'}
                 className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
               >
@@ -258,7 +292,7 @@ export default function ApplicationDetail() {
                 <span>Approve</span>
               </button>
               <button
-                onClick={handleDeny}
+                onClick={() => handleAction('deny')}
                 disabled={actionLoading === 'deny'}
                 className="w-full px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
               >

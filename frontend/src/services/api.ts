@@ -180,23 +180,59 @@ export const api = {
     }
   },
 
-  // Approve application
   async approveApplication(applicationId: string): Promise<{ success: boolean; message: string }> {
-    await delay(800);
-    console.log(`Approving application: ${applicationId}`);
-    return {
-      success: true,
-      message: `Application ${applicationId} has been approved successfully.`
-    };
+    try {
+      const response = await fetch(`http://localhost:8000/api/application/approve/${applicationId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to approve application:', errorText);
+        return { success: false, message: 'Failed to approve application' };
+      }
+
+      const result = await response.json();
+      const data = result?.data;
+
+      if (data?.success) {
+        return { success: true, message: `✅ Application ${applicationId} approved successfully.` };
+      } else {
+        return { success: false, message: data?.error || 'Approval failed' };
+      }
+    } catch (error) {
+      console.error('⚠️ Error approving application:', error);
+      return { success: false, message: 'Network or server error' };
+    }
   },
 
   // Deny application
   async denyApplication(applicationId: string): Promise<{ success: boolean; message: string }> {
-    await delay(800);
-    console.log(`Denying application: ${applicationId}`);
-    return {
-      success: true,
-      message: `Application ${applicationId} has been denied.`
-    };
-  }
+    try {
+      const response = await fetch(`http://localhost:8000/api/application/deny/${applicationId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to deny application:', errorText);
+        return { success: false, message: 'Failed to deny application' };
+      }
+
+      const result = await response.json();
+      const data = result?.data;
+
+      if (data?.success) {
+        return { success: true, message: `🚫 Application ${applicationId} denied successfully.` };
+      } else {
+        return { success: false, message: data?.error || 'Denial failed' };
+      }
+    } catch (error) {
+      console.error('⚠️ Error denying application:', error);
+      return { success: false, message: 'Network or server error' };
+    }
+  },
+
 };

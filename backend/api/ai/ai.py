@@ -222,6 +222,7 @@ async def save_application_to_db(json_result, document, raw_response):
             "claude_confidence_level": json_result.get("confidence_level", 0),
             "claude_summary": json_result.get("summary", ""),
             "final_decision": json_result.get("recommendation", "UNKNOWN"),
+            "human_final": False,
             
             # Additional useful fields from the analysis
             "personal_information": json_result.get("personal_information", {}),

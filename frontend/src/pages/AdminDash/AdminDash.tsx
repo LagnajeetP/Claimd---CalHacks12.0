@@ -13,7 +13,6 @@ import {
   LogOut
 } from 'lucide-react';
 import MinimalNavbar from '../../components/MinimalNavbar';
-// import sampleData from '../../sample_api_call_db.json'; // Removed - only using real backend data
 import Cookies from 'js-cookie';
 
 interface Application {
@@ -22,9 +21,13 @@ interface Application {
   claude_confidence_level: number;
   claude_summary: string;
   claude_recommendation: 'approve' | 'further_review' | 'deny';
-  applicant_name?: string;
-  user_name?: string;
-  user_ssn?: string;
+  user_details: {
+    user_id: string;
+    name: string;
+    socialSecurityNumber: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 export default function AdminDash() {
@@ -39,86 +42,54 @@ export default function AdminDash() {
       try {
         setLoading(true);
         
-        // Step 1: Fetch all users
-        const usersResponse = await fetch('http://localhost:8000/api/users/all', {
+        // Fetch filtered applications (human_final = False)
+        const response = await fetch('http://localhost:8000/api/users/filtered', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
         
-        if (!usersResponse.ok) {
-          throw new Error('Failed to fetch users');
+        if (!response.ok) {
+          throw new Error('Failed to fetch filtered applications');
         }
         
-        const usersResult = await usersResponse.json();
-        console.log('Fetched users from API:', usersResult);
+        const result = await response.json();
+        console.log('Fetched filtered applications from API:', result);
         
-        if (!usersResult.success || !usersResult.users) {
-          throw new Error('Invalid users API response');
+        if (!result.success || !result.applications) {
+          throw new Error('Invalid API response');
         }
         
-        // Step 2: For each user, fetch their applications
-        const allApplicationsWithUsers: Application[] = [];
-        
-        for (const user of usersResult.users) {
-          // Skip users with no applications
-          if (user.application_count === 0) {
-            continue;
+        // Map backend data to frontend format
+        const mappedApplications = result.applications.map((app: any) => {
+          // Convert backend recommendation format to frontend format
+          const backendDecision = app.final_decision || app.claude_recommendation || '';
+          let recommendation = 'further_review'; // default
+          
+          if (backendDecision.toUpperCase() === 'APPROVE') {
+            recommendation = 'approve';
+          } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
+            recommendation = 'deny';
+          } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
+            recommendation = 'further_review';
           }
           
-          // Fetch applications for this user by SSN
-          const appResponse = await fetch(`http://localhost:8000/api/user/applications/${user.ssn}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (appResponse.ok) {
-            const appResult = await appResponse.json();
-            console.log(`Fetched applications for ${user.name}:`, appResult);
-            
-            if (appResult.data.success && appResult.data.applications) {
-              // Map backend data to frontend format, including user name
-              const mappedApplications = appResult.data.applications.map((app: any) => {
-                // Convert backend recommendation format to frontend format
-                const backendDecision = app.final_decision || app.claude_recommendation || '';
-                let recommendation = 'further_review'; // default
-                
-                if (backendDecision.toUpperCase() === 'APPROVE') {
-                  recommendation = 'approve';
-                } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
-                  recommendation = 'deny';
-                } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
-                  recommendation = 'further_review';
-                }
-                
-                return {
-                  application_id: app.application_id,
-                  document: app.document || "",
-                  claude_confidence_level: app.claude_confidence_level,
-                  claude_summary: app.claude_summary,
-                  claude_recommendation: recommendation,
-                  user_name: user.name, // Populated from user data
-                  user_ssn: user.ssn,
-                  applicant_name: user.name // For backwards compatibility
-                };
-              });
-              
-              allApplicationsWithUsers.push(...mappedApplications);
-            }
-          } else {
-            console.warn(`Failed to fetch applications for user ${user.name}`);
-          }
-        }
+          return {
+            application_id: app.application_id,
+            document: app.document || "",
+            claude_confidence_level: app.claude_confidence_level || 0,
+            claude_summary: app.claude_summary || "No summary available",
+            claude_recommendation: recommendation,
+            user_details: app.user_details
+          };
+        });
         
-        setApplications(allApplicationsWithUsers);
-        console.log('Total applications loaded:', allApplicationsWithUsers.length);
+        setApplications(mappedApplications);
+        console.log('Total filtered applications loaded:', mappedApplications.length);
         
       } catch (error) {
         console.error('API call failed:', error);
-        // No fallback - only show real data from backend
         setApplications([]);
         alert('Failed to load applications from backend. Please ensure the backend server is running.');
       } finally {
@@ -162,7 +133,7 @@ export default function AdminDash() {
   };
 
   const filteredApplications = applications.filter(app => {
-    const matchesSearch = app.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = app.user_details?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          app.application_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterRecommendation === 'all' || app.claude_recommendation === filterRecommendation;
     return matchesSearch && matchesFilter;
@@ -200,7 +171,7 @@ export default function AdminDash() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl md:text-6xl font-thin text-gray-900 mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600 font-light">Manage and review disability benefit applications</p>
+              <p className="text-gray-600 font-light">Manage and review disability benefit applications (Pending Human Review)</p>
             </div>
             <button
               onClick={handleSignOut}
@@ -277,7 +248,7 @@ export default function AdminDash() {
               <p className="text-slate-500">
                 {searchTerm || filterRecommendation !== 'all' 
                   ? 'Try adjusting your search or filter criteria.'
-                  : 'No applications are currently available.'
+                  : 'No applications are currently awaiting human review.'
                 }
               </p>
             </div>
@@ -294,11 +265,11 @@ export default function AdminDash() {
                       <div className="flex items-center space-x-4 mb-3">
                         <div className="flex items-center space-x-2">
                           <User className="w-5 h-5 text-slate-500" />
-                          <span className="font-semibold text-slate-800">{application.user_name}</span>
+                          <span className="font-semibold text-slate-800">{application.user_details?.name || 'Unknown'}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <FileText className="w-4 h-4 text-slate-500" />
-                          <span className="text-sm text-slate-600">{2} documents</span>
+                          <span className="text-sm text-slate-600">2 documents</span>
                         </div>
                       </div>
                       

@@ -195,6 +195,72 @@ async def update_application_status(application_id: str, status: str, admin_note
         return {"success": False, "error": str(e)}
 
 
+async def get_pending_users():
+    try:
+        print("Fetching pending users")
+        
+        users_cursor = db.users.find({})
+        users = []
+        
+        async for user in users_cursor:
+            users.append({
+                "user_id": user.get("user_id"),
+                "name": user.get("name"),
+                "ssn": user.get("socialSecurityNumber"),
+                "application_count": len(user.get("applications", []))
+            })
+        
+        return {"success": True, "users": users, "count": len(users)}
+    
+    except Exception as e:
+        print(f"❌ Error in read_all_users(): {e}")
+        return {"success": False, "error": str(e)}
+
+async def get_filtered_applications():
+    """
+    Get all applications where human_final is False, with user details appended
+    """
+    try:
+        print("Fetching filtered applications (human_final = False)")
+        
+        # Get all users
+        users_cursor = db.users.find({})
+        filtered_applications = []
+        
+        async for user in users_cursor:
+            # Get application IDs for this user
+            app_ids = user.get("applications", [])
+            
+            # Fetch each application
+            for app_id in app_ids:
+                app = await db.applications.find_one({"application_id": app_id})
+                
+                if app and app.get("human_final") == False:
+                    # Convert to JSON-safe format
+                    app_json = bson_to_json(app)
+                    
+                    # Append user details
+                    app_json["user_details"] = {
+                        "user_id": user.get("user_id"),
+                        "name": user.get("name"),
+                        "socialSecurityNumber": user.get("socialSecurityNumber"),
+                        "email": user.get("email"),
+                        "phone": user.get("phone")
+                    }
+                    
+                    filtered_applications.append(app_json)
+        
+        return {
+            "success": True,
+            "applications": filtered_applications,
+            "count": len(filtered_applications)
+        }
+    
+    except Exception as e:
+        print(f"❌ Error in getFilteredApplications(): {e}")
+        return {"success": False, "error": str(e)}
+
+
 async def read_all_users():
     """
     Get all users with basic info (no full application data)
@@ -259,3 +325,72 @@ async def read():
         print(f"❌ Error in read(): {e}")
         return {"success": False, "error": str(e)}
 
+
+
+async def approve_application(application_id: str):
+    """
+    Mark an application as approved (human_final=True, final_decision="APPROVE")
+    """
+    print(f"Approving application: {application_id}")
+    try:
+        result = await db.applications.update_one(
+            {"application_id": application_id},
+            {
+                "$set": {
+                    "human_final": True,
+                    "final_decision": "APPROVE",
+                    "decision_updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+
+        if result.matched_count == 0:
+            return {"success": False, "error": f"No application found with ID {application_id}"}
+
+        print(f"✅ Application {application_id} approved")
+        return {
+            "success": True,
+            "message": f"Application {application_id} has been approved",
+            "application_id": application_id,
+            "final_decision": "APPROVE"
+        }
+
+    except Exception as e:
+        print(f"❌ Error approving application {application_id}: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# --------------------------------------------------------
+# Deny an application
+# --------------------------------------------------------
+async def deny_application(application_id: str):
+    """
+    Mark an application as denied (human_final=True, final_decision="REJECT")
+    """
+    print(f"Denying application: {application_id}")
+    try:
+        result = await db.applications.update_one(
+            {"application_id": application_id},
+            {
+                "$set": {
+                    "human_final": True,
+                    "final_decision": "REJECT",
+                    "decision_updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+
+        if result.matched_count == 0:
+            return {"success": False, "error": f"No application found with ID {application_id}"}
+
+        print(f"✅ Application {application_id} denied")
+        return {
+            "success": True,
+            "message": f"Application {application_id} has been denied",
+            "application_id": application_id,
+            "final_decision": "REJECT"
+        }
+
+    except Exception as e:
+        print(f"❌ Error denying application {application_id}: {e}")
+        return {"success": False, "error": str(e)}

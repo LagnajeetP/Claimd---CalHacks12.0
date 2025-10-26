@@ -3,7 +3,7 @@
 
 # Import Separate Files
 from api.ai.ai import ai
-from api.read.read import read, read_application_by_id, read_all_applications, read_applications_by_user_ssn, update_application_status, read_all_users
+from api.read.read import read, read_application_by_id, read_all_applications, read_applications_by_user_ssn, update_application_status, read_all_users, get_filtered_applications, approve_application, deny_application
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -123,6 +123,29 @@ async def getAllApplications():
 async def getAllUsers():
     result = await read_all_users()
     return result
+
+@app.get("/api/users/filtered")
+async def getFilteredApplications():
+    result = await get_filtered_applications()
+    return result
+
+@app.put("/api/application/approve/{application_id}")
+async def approveApplication(application_id: str):
+    result = await approve_application(application_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Application not found"))
+    return ReadResponse(data=result)
+
+@app.put("/api/application/deny/{application_id}")
+async def denyApplication(application_id: str):
+    result = await deny_application(application_id)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Application not found"))
+    return ReadResponse(data=result)
+    
+    
 
 # REQUEST: SSN to look up user applications
 # RESPONSE: All applications for a specific user
