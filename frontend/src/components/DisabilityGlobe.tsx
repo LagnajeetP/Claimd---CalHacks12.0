@@ -323,7 +323,7 @@ export default function DisabilityGlobe() {
             
             {/* Paragraph and Button below Claimd */}
             <p className="text-lg md:text-xl text-gray-700 mb-6 leading-relaxed max-w-2xl mx-auto">
-              AI-powered processing reduces SSDI wait times from 7 months to under 2 days
+              AI-powered processing reduces Social Security Disability Insurance (SSDI) wait times from 7 months to under 2 days
             </p>
             <Link
               to="/user"
