@@ -7,12 +7,12 @@ export interface Application {
   claude_recommendation: 'approve' | 'deny' | 'further_review';
   applicant_name?: string;
   applicant_ssn?: string;
-  ssn?: string;
+  socialSecurityNumber?: string;
 }
 
 export interface Applicant {
   name: string;
-  ssn: string;
+  socialSecurityNumber: string;
   applications: Application[];
 }
 

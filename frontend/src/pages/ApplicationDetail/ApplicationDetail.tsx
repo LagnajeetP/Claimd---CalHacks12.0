@@ -22,75 +22,52 @@ export default function ApplicationDetail() {
   const [pdfError, setPdfError] = useState(false);
   const [actionLoading, setActionLoading] = useState<'approve' | 'deny' | null>(null);
 
-  // Helper to extract base64 data
-  const extractBase64 = (input: any): string | null => {
-    if (!input) return null;
-
-    // Handle Binary.createFromBase64('...', 0)
-    if (typeof input === 'string' && input.includes('Binary.createFromBase64')) {
-      const match = input.match(/Binary\.createFromBase64\('([^']+)'/);
-      return match ? match[1] : null;
-    }
-
-    // Handle MongoDB Binary { $binary: { base64: "..." } }
-    if (input?.$binary?.base64) {
-      return input.$binary.base64;
-    }
-
-    // Handle pure base64 strings
-    if (typeof input === 'string' && /^[A-Za-z0-9+/=]+$/.test(input)) {
-      return input;
-    }
-
-    return null;
-  };
-
   useEffect(() => {
-  const fetchApplication = async () => {
-    if (!applicationId) return;
+    const fetchApplication = async () => {
+      if (!applicationId) return;
 
-    try {
-      setLoading(true);
-      const data = await api.getApplicationById(applicationId);
-      setApplication(data);
+      try {
+        setLoading(true);
+        const data = await api.getApplicationById(applicationId);
+        setApplication(data);
 
+        console.log(data)
 
-      // --- Handle different possible shapes of the document field ---
-      let base64: string | null = null;
-      const doc = data.document;
+        // --- Handle different possible shapes of the document field ---
+        let base64: string | null = null;
+        const doc = data.document;
 
-      if (!doc) {
-        console.warn('⚠️ No document field found');
-      } else if (typeof doc === 'string') {
-        // Example: Binary.createFromBase64('JVBERi0xLjQKJeLjz9M...', 0)
-        const match = doc.match(/Binary\.createFromBase64\('([^']+)'/);
-        if (match) {
-          base64 = match[1];
-        } else if (doc.startsWith('JVBER')) {
-          // It's a direct base64 string
-          base64 = doc;
+        if (!doc) {
+          console.warn('⚠️ No document field found');
+        } else if (typeof doc === 'string') {
+          // Example: Binary.createFromBase64('JVBERi0xLjQKJeLjz9M...', 0)
+          const match = doc.match(/Binary\.createFromBase64\('([^']+)'/);
+          if (match) {
+            base64 = match[1];
+          } else if (doc.startsWith('JVBER')) {
+            // It's a direct base64 string
+            base64 = doc;
+          }
+        } else if (doc.$binary?.base64) {
+          base64 = doc.$binary.base64;
         }
-      } else if (doc.$binary?.base64) {
-        base64 = doc.$binary.base64;
+
+        if (base64) {
+          // Create a proper data URI for the PDF
+          const dataUrl = `data:application/pdf;base64,${base64}`;
+          setPdfSrc(dataUrl);
+        } else {
+          console.warn('❌ Could not extract base64 from document');
+        }
+      } catch (error) {
+        console.error('Error fetching application:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (base64) {
-        // Create a proper data URI for the PDF
-        const dataUrl = `data:application/pdf;base64,${base64}`;
-        setPdfSrc(dataUrl);
-      } else {
-        console.warn('❌ Could not extract base64 from document');
-      }
-    } catch (error) {
-      console.error('Error fetching application:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchApplication();
-}, [applicationId]);
-
+    fetchApplication();
+  }, [applicationId]);
 
   const handleApprove = async () => {
     if (!applicationId) return;
@@ -182,100 +159,104 @@ export default function ApplicationDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => navigate('/admin')}
-            className="p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-100"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Application Detail</h1>
-            <p className="text-sm text-slate-500 font-mono">ID: {application.application_id}</p>
+    <div className="h-screen bg-slate-50 p-4 overflow-hidden flex flex-col">
+      <div className="flex-1 max-w-[1800px] mx-auto w-full flex flex-col">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigate('/admin')}
+              className="p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-100"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-slate-800">Application Detail</h1>
+              <p className="text-xs text-slate-500 font-mono">ID: {application.application_id}</p>
+            </div>
           </div>
         </div>
 
-        {/* Document Viewer */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-slate-600" />
-              <h2 className="text-lg font-semibold text-slate-800">Document Viewer</h2>
-            </div>
-            {pdfSrc && (
-              <button
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = pdfSrc;
-                  link.download = `${application.application_id || 'document'}.pdf`;
-                  link.click();
-                }}
-                className="flex items-center space-x-1 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download</span>
-              </button>
-            )}
-          </div>
-
-          <div className="h-[800px] bg-white">
-            {pdfSrc && !pdfError ? (
-              <iframe
-                src={pdfSrc}
-                title="Document PDF"
-                className="w-full h-full border-0"
-                onError={() => setPdfError(true)}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-center text-slate-500">
-                <div>
-                  <FileText className="w-12 h-12 mx-auto mb-3 text-slate-400" />
-                  <p>{pdfError ? 'Unable to load PDF.' : 'No document available.'}</p>
-                </div>
+        {/* Two Column Layout: PDF Left, Info Right */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+          {/* Left: Document Viewer */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-0">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-slate-600" />
+                <h2 className="text-sm font-semibold text-slate-800">Document</h2>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Summary & AI Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 space-y-4 md:col-span-2">
-            <h3 className="text-lg font-semibold text-slate-800">AI Summary</h3>
-            <p className="text-slate-700 text-sm">{application.claude_summary}</p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Application Info</h3>
-              <p><strong>Name:</strong> {application.applicant_name}</p>
-              <p><strong>SSN:</strong> {maskSSN(application.applicant_ssn || '')}</p>
-              <p><strong>ID:</strong> {application.application_id}</p>
+              {pdfSrc && (
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = pdfSrc;
+                    link.download = `${application.application_id || 'document'}.pdf`;
+                    link.click();
+                  }}
+                  className="flex items-center space-x-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs rounded-md"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Download</span>
+                </button>
+              )}
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">AI Recommendation</h3>
-              <div className={`inline-flex items-center space-x-2 px-3 py-2 rounded-lg border ${getRecommendationColor(application.claude_recommendation)}`}>
+            <div className="flex-1 bg-slate-50 min-h-0 relative">
+              {pdfSrc && !pdfError ? (
+                <embed
+                  src={`${pdfSrc}#toolbar=0&navpanes=0&scrollbar=1`}
+                  type="application/pdf"
+                  className="absolute inset-0 w-full h-full"
+                  onError={() => setPdfError(true)}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-center text-slate-500">
+                  <div>
+                    <FileText className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                    <p className="text-sm">{pdfError ? 'Unable to load PDF.' : 'No document available.'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Summary & Actions */}
+          <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Application Info</h3>
+              <div className="space-y-1 text-xs">
+                <p><strong>Name:</strong> {application.applicant_name}</p>
+                <p><strong>SSN:</strong> {maskSSN(application.socialSecurityNumber || '')}</p>
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Summary</h3>
+              <p className="text-slate-700 text-xs leading-relaxed">{application.claude_summary}</p>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex-shrink-0">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">AI Recommendation</h3>
+              <div className={`inline-flex items-center space-x-2 px-2 py-1 rounded-lg border text-xs ${getRecommendationColor(application.claude_recommendation)}`}>
                 {getRecommendationIcon(application.claude_recommendation)}
                 <span className="capitalize font-medium">
                   {application.claude_recommendation || 'N/A'}
                 </span>
               </div>
-              <div className="mt-3 text-sm">
+              <div className="mt-2 text-xs">
                 Confidence:{" "}
-                <span className={getConfidenceColor(application.claude_confidence_level || 0)}>
+                <span className={`font-semibold ${getConfidenceColor(application.claude_confidence_level || 0)}`}>
                   {(application.claude_confidence_level * 100).toFixed(1)}%
                 </span>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 space-y-3">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 space-y-2 flex-shrink-0">
               <button
                 onClick={handleApprove}
                 disabled={actionLoading === 'approve'}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
               >
                 {actionLoading === 'approve' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -287,7 +268,7 @@ export default function ApplicationDetail() {
               <button
                 onClick={handleDeny}
                 disabled={actionLoading === 'deny'}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2 disabled:opacity-50 text-sm"
               >
                 {actionLoading === 'deny' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
