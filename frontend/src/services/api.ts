@@ -8,6 +8,27 @@ export interface Application {
   applicant_name?: string;
   applicant_ssn?: string;
   socialSecurityNumber?: string;
+  // Phase data
+  phase_1_current_work?: {
+    finding?: string;
+    status?: string;
+  };
+  phase_2_medical_severity?: {
+    finding?: string;
+    status?: string;
+  };
+  phase_3_listings?: {
+    finding?: string;
+    status?: string;
+  };
+  phase_4_rfc?: {
+    reason_cannot_assess?: string;
+    status?: string;
+  };
+  phase_5_vocational?: {
+    reason?: string;
+    status?: string;
+  };
 }
 
 export interface Applicant {
