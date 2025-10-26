@@ -9,11 +9,13 @@ import {
   Loader2,
   Search,
   Filter,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import sampleData from '../../sample_api_call_db.json';
+import Cookies from 'js-cookie';
 
 interface Application {
   application_id: string;
@@ -114,6 +116,11 @@ export default function AdminDash() {
     navigate(`/admin/detail/${applicationId}`);
   };
 
+  const handleSignOut = () => {
+    Cookies.remove('userData');
+    navigate('/');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -134,8 +141,19 @@ export default function AdminDash() {
       <Navbar />
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
-          <p className="text-slate-600">Manage and review disability benefit applications</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
+              <p className="text-slate-600">Manage and review disability benefit applications</p>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
         {/* Statistics Cards */}

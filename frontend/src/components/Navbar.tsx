@@ -33,18 +33,6 @@ export default function Navbar() {
             >
               Dashboard
             </Link>
-            <Link 
-              to="/user/form" 
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-            >
-              Apply Now
-            </Link>
-            <Link 
-              to="/admin" 
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-            >
-              Admin
-            </Link>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Shield className="w-4 h-4" />
               <span>Secure & Compliant</span>
@@ -79,20 +67,6 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
               >
                 Dashboard
-              </Link>
-              <Link
-                to="/user/form"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                Apply Now
-              </Link>
-              <Link
-                to="/admin"
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                Admin
               </Link>
               <div className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600">
                 <Shield className="w-4 h-4" />

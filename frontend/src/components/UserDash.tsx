@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, User, CheckCircle, XCircle, AlertCircle, ArrowRight, Shield } from 'lucide-react';
+import { FileText, User, CheckCircle, XCircle, AlertCircle, ArrowRight, Shield, Plus } from 'lucide-react';
 import Cookies from 'js-cookie';
 import sampleData from '../sample_api_call_db.json';
 
@@ -94,13 +94,6 @@ export default function UserDash() {
     return ssn.slice(-4);
   };
 
-  const searchUserInDatabase = (name: string, ssn: string): DatabaseUser | null => {
-    const cleanSSN = ssn.replace(/\D/g, '');
-    return userDatabase.find(user => 
-      user.name.toLowerCase() === name.toLowerCase() && 
-      user.ssn.replace(/\D/g, '') === cleanSSN
-    ) || null;
-  };
 
   const fetchUserData = async () => {
     try {
@@ -136,10 +129,36 @@ export default function UserDash() {
         ssn: formData.ssn.trim()
       };
       
+      // Check if this is an admin SSN
+      const adminSSN = import.meta.env.VITE_ADMIN_SSN || '123-00-4572'; // Fallback for development
+      console.log('Admin SSN from env:', import.meta.env.VITE_ADMIN_SSN);
+      console.log('Using admin SSN:', adminSSN);
+      console.log('User entered SSN:', userData.ssn);
+      
+      const cleanInputSSN = userData.ssn.replace(/\D/g, '');
+      const cleanAdminSSN = adminSSN.replace(/\D/g, '');
+      
+      console.log('Clean input SSN:', cleanInputSSN);
+      console.log('Clean admin SSN:', cleanAdminSSN);
+      console.log('Is admin?', cleanInputSSN === cleanAdminSSN);
+      
+      if (cleanInputSSN === cleanAdminSSN) {
+        // Admin login - redirect to admin dashboard
+        Cookies.set('userData', JSON.stringify({ ...userData, role: 'admin' }), { expires: 7 });
+        navigate('/admin');
+        return;
+      }
+      
+      // Regular user login
       Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
       setUserData(userData);
       
-      const foundUser = searchUserInDatabase(userData.name, userData.ssn);
+      // Search in the current userDatabase state
+      const cleanSSN = userData.ssn.replace(/\D/g, '');
+      const foundUser = userDatabase.find(user => 
+        user.name.toLowerCase() === userData.name.toLowerCase() && 
+        user.ssn.replace(/\D/g, '') === cleanSSN
+      ) || null;
       setDatabaseUser(foundUser);
       
       setFormData({ name: '', ssn: '' });
@@ -163,16 +182,32 @@ export default function UserDash() {
   useEffect(() => {
     const initializeData = async () => {
       // Fetch user data (API or fallback to sample)
-      await fetchUserData();
+      const fetchedData = await fetchUserData();
       
       // Check for saved user data
       const savedUserData = Cookies.get('userData');
+      console.log('Saved user data from cookie:', savedUserData);
+      
       if (savedUserData) {
         try {
           const parsed = JSON.parse(savedUserData);
+          console.log('Parsed user data:', parsed);
+          
+          // Check if this is an admin user
+          if (parsed.role === 'admin') {
+            console.log('Admin user detected, redirecting to admin dashboard');
+            navigate('/admin');
+            return;
+          }
+          
           setUserData(parsed);
           
-          const foundUser = searchUserInDatabase(parsed.name, parsed.ssn);
+          // Search in the freshly fetched data
+          const cleanSSN = parsed.ssn.replace(/\D/g, '');
+          const foundUser = fetchedData.find((user: any) => 
+            user.name.toLowerCase() === parsed.name.toLowerCase() && 
+            user.ssn.replace(/\D/g, '') === cleanSSN
+          ) || null;
           setDatabaseUser(foundUser);
         } catch (error) {
           console.error('Error parsing saved user data:', error);
@@ -312,7 +347,20 @@ export default function UserDash() {
         {/* Applications */}
         {databaseUser ? (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-xl font-semibold text-slate-800 mb-6">Your Applications ({databaseUser.applications.length})</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-slate-800">Your Applications ({databaseUser.applications.length})</h3>
+              <button
+                onClick={() => navigate('/user/form')}
+                className="group relative bg-green-600 text-white p-3 rounded-full hover:bg-green-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                title="Apply for Benefits"
+              >
+                <Plus className="w-6 h-6" />
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  Apply for Benefits
+                </div>
+              </button>
+            </div>
             <div className="space-y-4">
               {databaseUser.applications.map((app, index) => (
                 <div
@@ -341,7 +389,7 @@ export default function UserDash() {
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium text-slate-600">Status:</span>
+                          <span className="text-sm font-medium text-slate-600">Predicted Outcome:</span>
                           <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md border text-xs ${getRecommendationColor(app.claude_recommendation)}`}>
                             {getRecommendationIcon(app.claude_recommendation)}
                             <span className="capitalize">{app.claude_recommendation.replace('_', ' ')}</span>
@@ -364,7 +412,20 @@ export default function UserDash() {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Your Applications</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-800">Your Applications</h3>
+              <button
+                onClick={() => navigate('/user/form')}
+                className="group relative bg-green-600 text-white p-3 rounded-full hover:bg-green-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                title="Apply for Benefits"
+              >
+                <Plus className="w-6 h-6" />
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  Apply for Benefits
+                </div>
+              </button>
+            </div>
             <p className="text-slate-600">No applications found in our system. Submit a new application to get started.</p>
           </div>
         )}

@@ -293,7 +293,7 @@ export default function UserApplicationDetail() {
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium text-slate-600 mb-2">Current Status</h4>
+                  <h4 className="text-sm font-medium text-slate-600 mb-2">Predicted Outcome</h4>
                   <div className={`inline-flex items-center space-x-1 px-3 py-2 rounded-lg border ${getRecommendationColor(application.claude_recommendation)}`}>
                     {getRecommendationIcon(application.claude_recommendation)}
                     <span className="capitalize font-medium">{application.claude_recommendation.replace('_', ' ')}</span>
