@@ -51,8 +51,8 @@ const initialFormData: FormData = {
 export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showInterlude, setShowInterlude] = useState(false);
   const [ssnFocused, setSsnFocused] = useState(false);
   const [ssnDisplayValue, setSsnDisplayValue] = useState('');
 
@@ -157,58 +157,37 @@ export default function MultiStepForm() {
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value instanceof File) {
-          submitData.append(key, value);
-        } else {
-          submitData.append(key, String(value));
-        }
-      });
-
-      // Make POST request to your API
-      const response = await fetch('http://localhost:8000/api/benefit-application', {
-        method: 'POST',
-        body: submitData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Application submitted successfully:', result);
-        
-        // Store user data in cookie for automatic login
-        if (result.applicant) {
-          const userData = {
-            name: result.applicant.name,
-            ssn: result.applicant.ssn
-          };
-          Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
-        }
-        
-        alert('Application submitted successfully! You will be redirected to your dashboard.');
-        setIsSubmitted(true);
-        // Reset form or redirect
-        setFormData(initialFormData);
-        setCurrentStep(1);
-        
-        // Redirect to user dashboard after a short delay
-        setTimeout(() => {
-          window.location.href = '/user';
-        }, 2000);
+    // Show interlude screen immediately
+    setIsSubmitted(true);
+    setShowInterlude(true);
+    
+    // Store user data in cookie for automatic login
+    const userData = {
+      name: `${formData.firstName} ${formData.lastName}`,
+      ssn: formData.socialSecurityNumber
+    };
+    Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
+    
+    // Send data to backend in the background (fire and forget)
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value instanceof File) {
+        submitData.append(key, value);
       } else {
-        throw new Error('Failed to submit application');
+        submitData.append(key, String(value));
       }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Failed to submit application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
+    
+    fetch('http://localhost:8000/api/benefit-application', {
+      method: 'POST',
+      body: submitData,
+    }).catch(error => {
+      console.error('Error submitting form to backend:', error);
+    });
+  };
+
+  const handleGoToDashboard = () => {
+    window.location.href = '/user';
   };
 
   const isStepComplete = (step: number): boolean => {
@@ -706,6 +685,64 @@ export default function MultiStepForm() {
     }
   };
 
+  // If showing interlude screen, render that instead
+  if (showInterlude) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+          <div className="mb-8">
+            <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-6" />
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Application Submitted Successfully!</h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Thank you for submitting your disability benefits application.
+            </p>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-8 mb-8">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">What happens next?</h3>
+            <div className="text-left max-w-2xl mx-auto space-y-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4">1</div>
+                <div>
+                  <p className="font-medium text-gray-900">Application Review</p>
+                  <p className="text-gray-600">Our team will review your submitted documents and information.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4">2</div>
+                <div>
+                  <p className="font-medium text-gray-900">Medical Records Verification</p>
+                  <p className="text-gray-600">We'll contact your healthcare providers to verify your medical information.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-4">3</div>
+                <div>
+                  <p className="font-medium text-gray-900">Decision Notification</p>
+                  <p className="text-gray-600">You'll receive a notification about the status of your application.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-8">
+            <h4 className="text-xl font-semibold text-green-900 mb-2">Estimated Time for Approval</h4>
+            <p className="text-3xl font-bold text-green-600">1-2 Days</p>
+            <p className="text-sm text-gray-600 mt-2">You will be notified via email once a decision has been made.</p>
+          </div>
+
+          <button
+            onClick={handleGoToDashboard}
+            className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center mx-auto space-x-2"
+          >
+            <span>Go to Dashboard</span>
+            <ArrowRight className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Progress Timeline */}
@@ -783,14 +820,9 @@ export default function MultiStepForm() {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 ${
-              isSubmitting
-                ? 'bg-gray-400 text-white cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
+            className="px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 bg-green-600 text-white hover:bg-green-700"
           >
-            <span>{isSubmitting ? 'Submitting...' : 'Submit Application'}</span>
+            <span>Submit Application</span>
             <ArrowRight className="w-5 h-5" />
           </button>
         )}
