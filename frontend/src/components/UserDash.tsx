@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, AlertCircle, ArrowRight, Plus } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 interface UserData {
@@ -93,10 +93,6 @@ export default function UserDash() {
     }
   };
 
-  const handleApplicationClick = (applicationId: string) => {
-    navigate(`/user/detail/${applicationId}`);
-  };
-
   const getUserInitials = (name: string) => {
     return name
       .split(' ')
@@ -111,22 +107,54 @@ export default function UserDash() {
   };
 
 
-  const fetchUserApplications = async (ssn: string) => {
+  const fetchUserApplications = async (userName: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/user/applications/${ssn}`, {
+      // Step 1: Fetch all users from the database
+      const usersResponse = await fetch('http://localhost:8000/api/users/all', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Fetched user applications from API:', result);
+      if (!usersResponse.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      
+      const usersResult = await usersResponse.json();
+      console.log('Fetched all users from API:', usersResult);
+      
+      if (!usersResult.success || !usersResult.users) {
+        throw new Error('Invalid users API response');
+      }
+      
+      // Step 2: Filter users by name (should be only one match since names are hardcoded)
+      const matchingUser = usersResult.users.find((user: any) => 
+        user.name.toLowerCase() === userName.toLowerCase()
+      );
+      
+      if (!matchingUser) {
+        console.log('No user found with name:', userName);
+        return null;
+      }
+      
+      console.log('Found matching user:', matchingUser);
+      
+      // Step 3: Fetch applications for this user using their SSN
+      const appResponse = await fetch(`http://localhost:8000/api/user/applications/${matchingUser.ssn}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (appResponse.ok) {
+        const appResult = await appResponse.json();
+        console.log('Fetched user applications from API:', appResult);
         
-        if (result.data.success && result.data.user) {
+        if (appResult.data.success && appResult.data.user) {
           // Map backend data to frontend format
-          const mappedApplications = result.data.applications.map((app: any) => {
+          const mappedApplications = appResult.data.applications.map((app: any) => {
             // Convert backend recommendation format to frontend format
             const backendDecision = app.final_decision || app.claude_recommendation || '';
             let recommendation = 'further_review'; // default
@@ -152,8 +180,8 @@ export default function UserDash() {
           });
           
           return {
-            name: result.data.user.name,
-            ssn: result.data.user.socialSecurityNumber,
+            name: matchingUser.name, // Use name from the users list
+            ssn: matchingUser.ssn,
             applications: mappedApplications
           };
         } else {
@@ -182,7 +210,7 @@ export default function UserDash() {
         return;
       }
       
-      // Regular user login - use SSN to fetch applications
+      // Regular user login - use username as name to fetch applications
       const userData = {
         name: formData.username.trim(),
         ssn: formData.password.trim() // Using password as SSN for user matching
@@ -191,8 +219,8 @@ export default function UserDash() {
       Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
       setUserData(userData);
       
-      // Fetch user applications from backend
-      const userApplications = await fetchUserApplications(userData.ssn);
+      // Fetch user applications from backend by name
+      const userApplications = await fetchUserApplications(userData.name);
       setDatabaseUser(userApplications);
       
       setFormData({ username: '', password: '' });
@@ -227,8 +255,8 @@ export default function UserDash() {
           
           setUserData(parsed);
           
-          // Fetch user applications from backend
-          const userApplications = await fetchUserApplications(parsed.ssn);
+          // Fetch user applications from backend by name
+          const userApplications = await fetchUserApplications(parsed.name);
           setDatabaseUser(userApplications);
         } catch (error) {
           console.error('Error parsing saved user data:', error);
@@ -371,8 +399,7 @@ export default function UserDash() {
               {databaseUser.applications.map((app, index) => (
                 <div
                   key={app.application_id}
-                  onClick={() => handleApplicationClick(app.application_id)}
-                  className="border border-gray-300 p-6 hover:border-gray-900 transition-all duration-200 cursor-pointer group"
+                  className="border border-gray-300 p-6"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -405,10 +432,6 @@ export default function UserDash() {
                       <div className="text-sm text-gray-600 font-light line-clamp-2 pl-24">
                         {app.claude_summary}
                       </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2 ml-4">
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-900 transition-colors duration-200" />
                     </div>
                   </div>
                 </div>
