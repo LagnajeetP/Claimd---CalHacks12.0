@@ -170,7 +170,7 @@ export default function MultiStepForm() {
       });
 
       // Make POST request to your API
-      const response = await fetch('/api/benefit-application', {
+      const response = await fetch('http://localhost:8000/api/benefit-application', {
         method: 'POST',
         body: submitData,
       });

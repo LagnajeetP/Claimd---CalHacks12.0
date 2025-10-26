@@ -2,8 +2,10 @@
 # main.py -- Main Program for Backend
 
 # Import Separate Files
-from api.ai.ai import ai, process_multistep_form_data
+from api.ai.ai import ai
 from api.read.read import read
+
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import Modules
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -27,34 +29,14 @@ class WriteResponse(BaseModel):
 
 app = FastAPI()
 
-# REQUEST: 
-# RESPONSE: 
-# FUNCTIONALITY: 
-@app.post("/write", response_model=WriteResponse)
-async def mainAI(medicalRecordsFile: UploadFile = File(...),
-    incomeDocumentsFile: UploadFile = File(...),
-    firstName: str = Form(...),
-    lastName: str = Form(...),
-    address: str = Form(...),
-    dateOfBirth: str = Form(...),
-    socialSecurityNumber: str = Form(...)
-):
-        # Read uploaded files as bytes
-    medical_pdf_bytes = await medicalRecordsFile.read()
-    income_pdf_bytes = await incomeDocumentsFile.read()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # or specify ["http://localhost:3000"] etc.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Call your AI function with all inputs
-    result = await ai(
-        medical_pdf_bytes=medical_pdf_bytes,
-        income_pdf_bytes=income_pdf_bytes,
-        first_name=firstName,
-        last_name=lastName,
-        address=address,
-        date_of_birth=dateOfBirth,
-        social_security_number=socialSecurityNumber
-    )
-
-    return WriteResponse(**result)
 
 # REQUEST: MultiStepForm data with file uploads
 # RESPONSE: Processing results with MongoDB document IDs
@@ -69,11 +51,6 @@ async def handle_benefit_application(
     state: str = Form(...),
     zipCode: str = Form(...),
     socialSecurityNumber: str = Form(...),
-    doctorNames: str = Form(""),
-    doctorPhoneNumbers: str = Form(""),
-    hospitalNames: str = Form(""),
-    hospitalPhoneNumbers: str = Form(""),
-    medicalRecordsPermission: bool = Form(False),
     medicalRecordsFile: UploadFile = File(None),
     incomeDocumentsFile: UploadFile = File(None)
 ):
@@ -87,27 +64,19 @@ async def handle_benefit_application(
             "state": state,
             "zipCode": zipCode,
             "socialSecurityNumber": socialSecurityNumber,
-            "doctorNames": doctorNames,
-            "doctorPhoneNumbers": doctorPhoneNumbers,
-            "hospitalNames": hospitalNames,
-            "hospitalPhoneNumbers": hospitalPhoneNumbers,
-            "medicalRecordsPermission": medicalRecordsPermission
         }
         
-        result = await process_multistep_form_data(
-            form_data=form_data,
-            medical_records_file=medicalRecordsFile,
-            financial_records_file=incomeDocumentsFile
+        result = await ai(
+            form_data,
+            medicalRecordsFile,
+            incomeDocumentsFile
         )
+        if not result:
+            return
         
         if result["success"]:
             return {
-                "success": True,
-                "message": result["message"],
-                "document_ids": result["document_ids"],
-                "files_uploaded": result["files_uploaded"],
-                "applicant_name": result["applicant_name"]
-            }
+                "success": True,}
         else:
             raise HTTPException(status_code=500, detail=result["error"])
             
