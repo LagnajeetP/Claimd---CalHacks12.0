@@ -1,13 +1,14 @@
 import os
 import json
 import asyncio
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from anthropic import AsyncAnthropic
 from pymongo import MongoClient
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from datetime import datetime
+from fastapi import UploadFile
 import io
 
 
@@ -240,9 +241,14 @@ def process_applicant_documents(applicant_info: Dict[str, Any],
             })
             print(f"Added medical PDF: {medical_pdf_path}")
         
-        # Upload all PDFs to MongoDB
+        # Upload all PDFs to MongoDB in a single document with specified field order
         print("Uploading PDFs to MongoDB...")
-        document_ids = write_multiple_pdfs_to_mongodb(pdf_files)
+        document_ids = write_ordered_document_to_mongodb(
+            form_data, 
+            medical_records_file, 
+            financial_records_file, 
+            general_pdf_content
+        )
         
         return {
             "success": True,
@@ -347,8 +353,196 @@ async def analyze_ssda_data(applicant_info: Dict[str, Any] = None):
         "claude_response": claude_response
     }
 
+async def write_ordered_document_to_mongodb(
+    form_data: Dict[str, Any],
+    medical_records_file: Optional[UploadFile] = None,
+    financial_records_file: Optional[UploadFile] = None,
+    general_pdf_content: bytes = None
+) -> List[str]:
+    """
+    Write a single MongoDB document with fields in the specified order:
+    medical_pdf_bytes, income_pdf_bytes, firstName, lastName, address, dateOfBirth, socialSecurityNumber
+    
+    Args:
+        form_data: Dictionary containing form data from MultiStepForm.tsx
+        medical_records_file: Optional medical records PDF file
+        financial_records_file: Optional financial records PDF file
+        general_pdf_content: General applicant info PDF content
+        
+    Returns:
+        List containing the single document ID
+    """
+    try:
+        client = connect_to_mongodb()
+        if client is None:
+            # Fallback to local storage
+            print("MongoDB unavailable, using local storage...")
+            return [write_pdf_to_local_storage(general_pdf_content, "General_Applicant_Info.pdf")]
+            
+        db = client.ssda_database
+        collection = db["ssda_documents"]
+        
+        # Read medical records if provided
+        medical_pdf_bytes = b""
+        if medical_records_file and medical_records_file.filename:
+            medical_pdf_bytes = await medical_records_file.read()
+        
+        # Read financial records if provided  
+        income_pdf_bytes = b""
+        if financial_records_file and financial_records_file.filename:
+            income_pdf_bytes = await financial_records_file.read()
+        
+        # Create document with fields in the specified order
+        # Using OrderedDict to maintain field order
+        from collections import OrderedDict
+        
+        document = OrderedDict([
+            ("medical_pdf_bytes", medical_pdf_bytes),
+            ("income_pdf_bytes", income_pdf_bytes),
+            ("firstName", form_data.get('firstName', '')),
+            ("lastName", form_data.get('lastName', '')),
+            ("address", f"{form_data.get('address', '')}, {form_data.get('city', '')}, {form_data.get('state', '')} {form_data.get('zipCode', '')}".strip()),
+            ("dateOfBirth", form_data.get('dateOfBirth', '')),
+            ("socialSecurityNumber", form_data.get('socialSecurityNumber', '')),
+            # Additional metadata
+            ("created_at", datetime.now()),
+            ("file_size_medical", len(medical_pdf_bytes)),
+            ("file_size_income", len(income_pdf_bytes)),
+            ("medical_filename", medical_records_file.filename if medical_records_file else ""),
+            ("income_filename", financial_records_file.filename if financial_records_file else "")
+        ])
+        
+        # Insert document
+        result = collection.insert_one(dict(document))
+        print(f"Successfully uploaded ordered document to MongoDB with ID: {result.inserted_id}")
+        return [str(result.inserted_id)]
+        
+    except Exception as e:
+        print(f"Error writing ordered document to MongoDB: {e}")
+        # Fallback to local storage
+        print("Falling back to local storage...")
+        local_path = write_pdf_to_local_storage(general_pdf_content, "General_Applicant_Info.pdf")
+        return [local_path] if local_path else [f"local_General_Applicant_Info_{datetime.now().strftime('%Y%m%d_%H%M%S')}"]
+
+async def process_multistep_form_data(
+    form_data: Dict[str, Any],
+    medical_records_file: Optional[UploadFile] = None,
+    financial_records_file: Optional[UploadFile] = None
+) -> Dict[str, Any]:
+    """
+    Process MultiStepForm data and create PDFs for MongoDB storage with ordered fields
+    
+    Args:
+        form_data: Dictionary containing form data from MultiStepForm.tsx
+        medical_records_file: Optional medical records PDF file
+        financial_records_file: Optional financial records PDF file
+        
+    Returns:
+        Dictionary with processing results
+    """
+    try:
+        # Extract and format applicant information from form data
+        applicant_info = {
+            "full_name": f"{form_data.get('firstName', '')} {form_data.get('lastName', '')}".strip(),
+            "address": f"{form_data.get('address', '')}, {form_data.get('city', '')}, {form_data.get('state', '')} {form_data.get('zipCode', '')}".strip(),
+            "social_security_number": form_data.get('socialSecurityNumber', ''),
+            "date_of_birth": form_data.get('dateOfBirth', ''),
+            "phone": form_data.get('phone', ''),
+            "email": form_data.get('email', ''),
+            "birth_location": {
+                "city": form_data.get('birthCity', ''),
+                "state": form_data.get('birthState', ''),
+                "country": form_data.get('birthCountry', 'United States')
+            },
+            # Additional form data
+            "doctor_names": form_data.get('doctorNames', ''),
+            "doctor_phone_numbers": form_data.get('doctorPhoneNumbers', ''),
+            "hospital_names": form_data.get('hospitalNames', ''),
+            "hospital_phone_numbers": form_data.get('hospitalPhoneNumbers', ''),
+            "medical_records_permission": form_data.get('medicalRecordsPermission', False)
+        }
+        
+        print("Processing MultiStepForm data...")
+        print(f"Applicant: {applicant_info['full_name']}")
+        
+        # Create General Applicant Info PDF
+        print("Creating General Applicant Info PDF...")
+        general_pdf_content = create_general_applicant_info_pdf(applicant_info)
+        
+        # Upload all data to MongoDB in a single document with specified field order
+        print("Uploading ordered document to MongoDB...")
+        document_ids = await write_ordered_document_to_mongodb(
+            form_data, 
+            medical_records_file, 
+            financial_records_file, 
+            general_pdf_content
+        )
+        
+        # Also store the form data for reference (MongoDB or local storage)
+        try:
+            client = connect_to_mongodb()
+            if client:
+                db = client.ssda_database
+                form_collection = db["form_submissions"]
+                
+                form_document = {
+                    "applicant_info": applicant_info,
+                    "submission_date": datetime.now(),
+                    "pdf_document_ids": document_ids,
+                    "files_uploaded": ["General_Applicant_Info.pdf", 
+                                     medical_records_file.filename if medical_records_file else "",
+                                     financial_records_file.filename if financial_records_file else ""]
+                }
+                
+                form_result = form_collection.insert_one(form_document)
+                print(f"Form data stored in MongoDB with ID: {form_result.inserted_id}")
+            else:
+                # Store form data locally as JSON
+                storage_dir = create_local_storage_directory()
+                form_data_file = f"{storage_dir}/metadata/form_submission_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                
+                form_document = {
+                    "applicant_info": applicant_info,
+                    "submission_date": datetime.now().isoformat(),
+                    "pdf_document_ids": document_ids,
+                    "files_uploaded": ["General_Applicant_Info.pdf", 
+                                     medical_records_file.filename if medical_records_file else "",
+                                     financial_records_file.filename if financial_records_file else ""]
+                }
+                
+                with open(form_data_file, 'w') as f:
+                    json.dump(form_document, f, indent=2, default=str)
+                
+                print(f"Form data stored locally: {form_data_file}")
+        except Exception as e:
+            print(f"Warning: Could not store form data: {e}")
+        
+        return {
+            "success": True,
+            "message": f"Successfully processed MultiStepForm data and uploaded ordered document",
+            "document_ids": document_ids,
+            "files_uploaded": ["General_Applicant_Info.pdf", 
+                             medical_records_file.filename if medical_records_file else "",
+                             financial_records_file.filename if financial_records_file else ""],
+            "applicant_name": applicant_info['full_name']
+        }
+        
+    except Exception as e:
+        print(f"Error processing MultiStepForm data: {e}")
+        return {
+            "success": False,
+            "error": f"Error processing MultiStepForm data: {str(e)}"
+        }
+
 # Legacy function for backward compatibility
-async def ai():
+async def ai(
+        medical_pdf_bytes, 
+        income_pdf_bytes,
+        firstName,
+        lastName,
+        address,
+        dateOfBirth,
+        socialSecurityNumber):
     """
     Legacy function - calls the analyze_ssda_data function
     """
