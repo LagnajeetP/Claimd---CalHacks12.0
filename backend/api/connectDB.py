@@ -2,6 +2,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
+import certifi
+
 
 # Load environment variables from .env file
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.env"))
@@ -16,8 +18,12 @@ if not MONGO_URI:
     print(f"   Looking for .env at: {dotenv_path}")
     raise ValueError("MONGO_URI is required but not found in .env file")
 
-# Create global Mongo client
-client = AsyncIOMotorClient(MONGO_URI)
+# ✅ Create global Mongo client with SSL certificate verification
+client = AsyncIOMotorClient(
+    MONGO_URI,
+    tls=True,
+    tlsCAFile=certifi.where()
+)
 
 # Access specific database
 db = client[DB_NAME]
