@@ -483,27 +483,6 @@ export default function MultiStepForm() {
         return (
           <div className="space-y-6">
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Medical Information</h3>
-            
-            <div className="bg-blue-50 rounded-lg p-6">
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="medicalPermission"
-                  checked={formData.medicalRecordsPermission}
-                  onChange={(e) => updateFormData('medicalRecordsPermission', e.target.checked)}
-                  className="mt-1 mr-3"
-                />
-                <div>
-                  <label htmlFor="medicalPermission" className="text-sm font-medium text-gray-900">
-                    Permission to Access Medical Records *
-                  </label>
-                  <p className="text-sm text-gray-600 mt-1">
-                    I authorize the Social Security Administration to access my medical records 
-                    from my doctors and hospitals for the purpose of processing my disability benefits application.
-                  </p>
-                </div>
-              </div>
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -537,6 +516,27 @@ export default function MultiStepForm() {
                 )}
               </div>
             </div>
+                        <div className="bg-blue-50 rounded-lg p-6">
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="medicalPermission"
+                  checked={formData.medicalRecordsPermission}
+                  onChange={(e) => updateFormData('medicalRecordsPermission', e.target.checked)}
+                  className="mt-1 mr-3"
+                />
+                <div>
+                  <label htmlFor="medicalPermission" className="text-sm font-medium text-gray-900">
+                    Permission to Access Medical Records *
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    I authorize the Social Security Administration to access my medical records 
+                    from my doctors and hospitals for the purpose of processing my disability benefits application.
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </div>
         );
 
@@ -588,32 +588,6 @@ export default function MultiStepForm() {
                 )}
               </div>
             </div>
-
-            <div className="bg-green-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">Accepted Document Types:</h4>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">•</span>
-                  Pay stubs (most recent 3 months)
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">•</span>
-                  W-2 forms (most recent year)
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">•</span>
-                  Tax returns (most recent year)
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">•</span>
-                  Bank statements showing income deposits
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">•</span>
-                  Unemployment benefit statements
-                </li>
-              </ul>
-            </div>
           </div>
         );
 
@@ -623,7 +597,7 @@ export default function MultiStepForm() {
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Review Your Application</h3>
             
             <div className="bg-gray-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h4>
+              <h4 className="text-lg font-semibold text-green-600 mb-4">Personal Information</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Name:</span> {formData.firstName} {formData.lastName}
@@ -641,7 +615,7 @@ export default function MultiStepForm() {
             </div>
 
             <div className="bg-gray-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Medical Information</h4>
+              <h4 className="text-lg font-semibold text-green-600 mb-4">Medical Information</h4>
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="font-medium">Medical Records Permission:</span> 
@@ -659,24 +633,13 @@ export default function MultiStepForm() {
             </div>
 
             <div className="bg-gray-50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Financial Information</h4>
+              <h4 className="text-lg font-semibold text-green-600 mb-4">Financial Information</h4>
               <div className="text-sm">
                 <div>
                   <span className="font-medium">Income Documents:</span> 
                   <span className={formData.incomeDocumentsFile ? 'text-green-600' : 'text-red-600'}>
                     {formData.incomeDocumentsFile ? ` ${formData.incomeDocumentsFile.name}` : ' Not uploaded'}
                   </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm text-blue-700">
-                    <strong>Important:</strong> By submitting this application, you certify that all information 
-                    provided is true and accurate to the best of your knowledge.
-                  </p>
                 </div>
               </div>
             </div>
