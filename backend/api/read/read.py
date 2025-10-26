@@ -33,8 +33,54 @@ def bson_to_json(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # --------------------------------------------------------
+# Read single application by ID
+# --------------------------------------------------------
+async def read_application_by_id(application_id: str):
+    """
+    Given an application_id, find and return the full application data
+    """
+    print(f"Fetching application: {application_id}")
+    try:
+        app = await db.applications.find_one({"application_id": application_id})
+        if not app:
+            return {"success": False, "error": f"No application found with application_id {application_id}"}
+
+        return {"success": True, "application": bson_to_json(app)}
+
+    except Exception as e:
+        print(f"❌ Error in read_application_by_id(): {e}")
+        return {"success": False, "error": str(e)}
+
+
+# --------------------------------------------------------
 # Main read function
 # --------------------------------------------------------
+async def read_all_applications():
+    """
+    Get all applications from the database for admin dashboard
+    """
+    print("Fetching all applications")
+    try:
+        # Find all applications
+        cursor = db.applications.find({})
+        applications = []
+        
+        async for app in cursor:
+            applications.append(bson_to_json(app))
+
+        response_data = {
+            "success": True,
+            "applications": applications,
+            "application_count": len(applications)
+        }
+
+        return response_data
+
+    except Exception as e:
+        print(f"❌ Error in read_all_applications(): {e}")
+        return {"success": False, "error": str(e)}
+
+
 async def read(ssn: str):
     """
     Given an SSN, find the user and return:

@@ -4,7 +4,7 @@ import anthropic
 from dotenv import load_dotenv
 import re
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from bson import Binary
 import sys
@@ -68,7 +68,7 @@ async def merge_pdfs(form_data: dict, document_list: list):
         story.append(Spacer(1, 0.3*inch))
         
         # Application ID and Date
-        story.append(Paragraph(f"<b>Submission Date:</b> {datetime.utcnow().strftime('%B %d, %Y')}", styles['Normal']))
+        story.append(Paragraph(f"<b>Submission Date:</b> {datetime.now(timezone.utc).strftime('%B %d, %Y')}", styles['Normal']))
         story.append(Spacer(1, 0.5*inch))
         
         # Personal Information Section
@@ -187,7 +187,7 @@ async def store_documents_in_db(combinedDocument, combinedDocumentName):
             "filename": combinedDocumentName,
             "content_type": "application/pdf",
             "data": Binary(combinedDocument),
-            "uploaded_at": datetime.utcnow(),
+            "uploaded_at": datetime.now(timezone.utc),
             "document_type": "medical_records"
         }
         combined_result = await db.documents.insert_one(medical_doc)
@@ -237,7 +237,7 @@ async def save_application_to_db(json_result, document, raw_response):
             "evidence_summary": json_result.get("evidence_summary", {}),
             
             # Metadata
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "raw_claude_response": raw_response,
             "full_analysis": json_result
         }
@@ -287,7 +287,7 @@ async def save_or_update_user(name: str, socialSecurityNumber: str, application_
                 "name": name,
                 "socialSecurityNumber": socialSecurityNumber,
                 "applications": [application_id],
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
 
             result = await db.users.insert_one(user_doc)
