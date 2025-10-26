@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, AlertCircle, ArrowRight, Plus } from 'lucide-react';
 import Cookies from 'js-cookie';
-import sampleData from '../sample_api_call_db.json';
 
 interface UserData {
   name: string;
@@ -15,6 +14,9 @@ interface Application {
   claude_confidence_level: number;
   claude_summary: string;
   claude_recommendation: string;
+  admin_status?: string;
+  admin_notes?: string;
+  status_updated_at?: string;
 }
 
 interface DatabaseUser {
@@ -28,7 +30,6 @@ export default function UserDash() {
   const [databaseUser, setDatabaseUser] = useState<DatabaseUser | null>(null);
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [userDatabase, setUserDatabase] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const getRecommendationColor = (recommendation: string) => {
@@ -63,6 +64,35 @@ export default function UserDash() {
     return 'text-red-600';
   };
 
+  const getAdminStatusColor = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case 'APPROVED':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'DENIED':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'PENDING':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'UNDER_REVIEW':
+        return 'text-blue-600 bg-blue-50 border-blue-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getAdminStatusIcon = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case 'APPROVED':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'DENIED':
+        return <XCircle className="w-4 h-4" />;
+      case 'PENDING':
+      case 'UNDER_REVIEW':
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
   const handleApplicationClick = (applicationId: string) => {
     navigate(`/user/detail/${applicationId}`);
   };
@@ -81,10 +111,9 @@ export default function UserDash() {
   };
 
 
-  const fetchUserData = async () => {
+  const fetchUserApplications = async (ssn: string) => {
     try {
-      // Try to fetch from API first
-      const response = await fetch('/api/users', {
+      const response = await fetch(`http://localhost:8000/api/user/applications/${ssn}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -92,22 +121,54 @@ export default function UserDash() {
       });
       
       if (response.ok) {
-        const apiData = await response.json();
-        console.log('Fetched data from API:', apiData);
-        setUserDatabase(apiData);
-        return apiData;
+        const result = await response.json();
+        console.log('Fetched user applications from API:', result);
+        
+        if (result.data.success && result.data.user) {
+          // Map backend data to frontend format
+          const mappedApplications = result.data.applications.map((app: any) => {
+            // Convert backend recommendation format to frontend format
+            const backendDecision = app.final_decision || app.claude_recommendation || '';
+            let recommendation = 'further_review'; // default
+            
+            if (backendDecision.toUpperCase() === 'APPROVE') {
+              recommendation = 'approve';
+            } else if (backendDecision.toUpperCase() === 'REJECT' || backendDecision.toUpperCase() === 'DENY') {
+              recommendation = 'deny';
+            } else if (backendDecision.toUpperCase() === 'FURTHER REVIEW') {
+              recommendation = 'further_review';
+            }
+            
+            return {
+              application_id: app.application_id,
+              documents: app.documents || [],
+              claude_confidence_level: app.claude_confidence_level,
+              claude_summary: app.claude_summary,
+              claude_recommendation: recommendation,
+              admin_status: app.admin_status,
+              admin_notes: app.admin_notes,
+              status_updated_at: app.status_updated_at
+            };
+          });
+          
+          return {
+            name: result.data.user.name,
+            ssn: result.data.user.socialSecurityNumber,
+            applications: mappedApplications
+          };
+        } else {
+          throw new Error('Invalid API response');
+        }
       } else {
         throw new Error('API response not ok');
       }
     } catch (error) {
-      console.log('API call failed, using sample data:', error);
-      // Fallback to sample data
-      setUserDatabase(sampleData);
-      return sampleData;
+      console.error('API call failed:', error);
+      return null;
     }
   };
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.username.trim() && formData.password.trim()) {
       // Check for admin login
@@ -121,7 +182,7 @@ export default function UserDash() {
         return;
       }
       
-      // Regular user login - search by username
+      // Regular user login - use SSN to fetch applications
       const userData = {
         name: formData.username.trim(),
         ssn: formData.password.trim() // Using password as SSN for user matching
@@ -130,11 +191,9 @@ export default function UserDash() {
       Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
       setUserData(userData);
       
-      // Find user by name only
-      const foundUser = userDatabase.find(user => 
-        user.name.toLowerCase() === userData.name.toLowerCase()
-      ) || null;
-      setDatabaseUser(foundUser);
+      // Fetch user applications from backend
+      const userApplications = await fetchUserApplications(userData.ssn);
+      setDatabaseUser(userApplications);
       
       setFormData({ username: '', password: '' });
     }
@@ -150,9 +209,6 @@ export default function UserDash() {
 
   useEffect(() => {
     const initializeData = async () => {
-      // Fetch user data (API or fallback to sample)
-      const fetchedData = await fetchUserData();
-      
       // Check for saved user data
       const savedUserData = Cookies.get('userData');
       console.log('Saved user data from cookie:', savedUserData);
@@ -171,11 +227,9 @@ export default function UserDash() {
           
           setUserData(parsed);
           
-          // Search in the freshly fetched data by name only
-          const foundUser = fetchedData.find((user: any) => 
-            user.name.toLowerCase() === parsed.name.toLowerCase()
-          ) || null;
-          setDatabaseUser(foundUser);
+          // Fetch user applications from backend
+          const userApplications = await fetchUserApplications(parsed.ssn);
+          setDatabaseUser(userApplications);
         } catch (error) {
           console.error('Error parsing saved user data:', error);
           Cookies.remove('userData');
@@ -333,9 +387,17 @@ export default function UserDash() {
                               {Math.round(app.claude_confidence_level * 100)}%
                             </span>
                           </div>
-                          <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getRecommendationColor(app.claude_recommendation)}`}>
-                            {getRecommendationIcon(app.claude_recommendation)}
-                            <span className="capitalize">{app.claude_recommendation.replace('_', ' ')}</span>
+                          <div className="space-y-2">
+                            <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getRecommendationColor(app.claude_recommendation)}`}>
+                              {getRecommendationIcon(app.claude_recommendation)}
+                              <span className="capitalize">AI: {app.claude_recommendation.replace('_', ' ')}</span>
+                            </div>
+                            {app.admin_status && (
+                              <div className={`inline-flex items-center space-x-2 px-3 py-1 border text-xs font-light ${getAdminStatusColor(app.admin_status)}`}>
+                                {getAdminStatusIcon(app.admin_status)}
+                                <span className="capitalize">Status: {app.admin_status.replace('_', ' ')}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

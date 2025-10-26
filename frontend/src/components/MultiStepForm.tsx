@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, ArrowRight, ArrowLeft, Upload, FileText, User, Heart, DollarSign, Shield, AlertCircle } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 interface FormData {
   // Personal Information
@@ -177,11 +178,28 @@ export default function MultiStepForm() {
       });
 
       if (response.ok) {
-        alert('Application submitted successfully!');
+        const result = await response.json();
+        console.log('Application submitted successfully:', result);
+        
+        // Store user data in cookie for automatic login
+        if (result.applicant) {
+          const userData = {
+            name: result.applicant.name,
+            ssn: result.applicant.ssn
+          };
+          Cookies.set('userData', JSON.stringify(userData), { expires: 7 });
+        }
+        
+        alert('Application submitted successfully! You will be redirected to your dashboard.');
         setIsSubmitted(true);
         // Reset form or redirect
         setFormData(initialFormData);
         setCurrentStep(1);
+        
+        // Redirect to user dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = '/user';
+        }, 2000);
       } else {
         throw new Error('Failed to submit application');
       }

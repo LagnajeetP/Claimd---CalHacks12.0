@@ -3,7 +3,7 @@
 
 # Import Separate Files
 from api.ai.ai import ai
-from api.read.read import read, read_application_by_id, read_all_applications
+from api.read.read import read, read_application_by_id, read_all_applications, read_applications_by_user_ssn, update_application_status
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -116,6 +116,38 @@ async def getAllApplications():
     result = await read_all_applications()
     return ReadResponse(data=result)
 
+# REQUEST: Get all users for debugging
+# RESPONSE: All users from database
+# FUNCTIONALITY: Debug endpoint to see all users
+@app.get("/api/users/all")
+async def getAllUsers():
+    try:
+        from backend.api.connectDB import get_db
+        db = await get_db()
+        users = []
+        async for user in db.users.find():
+            users.append({
+                "user_id": user.get("user_id"),
+                "name": user.get("name"),
+                "ssn": user.get("socialSecurityNumber"),
+                "application_count": len(user.get("applications", []))
+            })
+        return {"success": True, "users": users, "count": len(users)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# REQUEST: SSN to look up user applications
+# RESPONSE: All applications for a specific user
+# FUNCTIONALITY: Read applications by user SSN
+@app.get("/api/user/applications/{ssn}")
+async def getUserApplications(ssn: str):
+    result = await read_applications_by_user_ssn(ssn)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "User not found"))
+    
+    return ReadResponse(data=result)
+
 # REQUEST: Application ID to look up
 # RESPONSE: Application data from database
 # FUNCTIONALITY: Read a single application by ID
@@ -125,6 +157,18 @@ async def getApplicationById(application_id: str):
     
     if not result.get("success"):
         raise HTTPException(status_code=404, detail=result.get("error", "Application not found"))
+    
+    return ReadResponse(data=result)
+
+# REQUEST: Application ID and status to update
+# RESPONSE: Success/failure message
+# FUNCTIONALITY: Update application status (approve/deny)
+@app.put("/api/application/{application_id}/status")
+async def updateApplicationStatus(application_id: str, status: str = Form(...), admin_notes: str = Form("")):
+    result = await update_application_status(application_id, status, admin_notes)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Failed to update status"))
     
     return ReadResponse(data=result)
 

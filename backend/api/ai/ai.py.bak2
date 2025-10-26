@@ -274,7 +274,7 @@ async def save_or_update_user(name: str, socialSecurityNumber: str, application_
                 {"socialSecurityNumber": socialSecurityNumber},
                 {"$addToSet": {"applications": application_id}}  # prevents duplicates
             )
-            print(f"✅ Updated existing user: {existing_user['name']} ({socialSecurityNumber}) with application {application_id}")
+            print(f"✅ Updated existing user: {existing_user['name']} ({socialSecurityNumber})")
             return {
                 "success": True,
                 "user_id": existing_user["user_id"],
@@ -282,7 +282,6 @@ async def save_or_update_user(name: str, socialSecurityNumber: str, application_
             }
 
         else:
-            print(f"👤 Creating new user: {name} with SSN: {socialSecurityNumber}")
             # Create a new user document
             user_doc = {
                 "user_id": str(uuid.uuid4()),
