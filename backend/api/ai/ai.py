@@ -127,6 +127,60 @@ async def save_application_to_db(json_result, documents, raw_response):
         print(f"❌ Error saving application to MongoDB: {e}")
         return None
 
+# SAVE USER TO MONGO
+# --------------------------------------------------------
+# Create or update a user tied to an application
+# --------------------------------------------------------
+async def save_or_update_user(name: str, ssn: str, application_id: str):
+    """
+    Creates a new user if not found, otherwise appends the new application_id
+    to their list of applications.
+    """
+    try:
+        # Check if user already exists by SSN
+        existing_user = await db.users.find_one({"socialSecurityNumber": ssn})
+
+        if existing_user:
+            # Append new application_id if not already in list
+            await db.users.update_one(
+                {"socialSecurityNumber": ssn},
+                {"$addToSet": {"applications": application_id}}  # prevents duplicates
+            )
+            print(f"✅ Updated existing user: {existing_user['name']} ({ssn})")
+            return {
+                "success": True,
+                "user_id": existing_user["user_id"],
+                "updated": True
+            }
+
+        else:
+            # Create a new user document
+            user_doc = {
+                "user_id": str(uuid.uuid4()),
+                "name": name,
+                "SSN": ssn,
+                "applications": [application_id],
+                "created_at": datetime.utcnow()
+            }
+
+            result = await db.users.insert_one(user_doc)
+            print(f"✅ Created new user with ID: {user_doc['user_id']}")
+            return {
+                "success": True,
+                "user_id": user_doc["user_id"],
+                "inserted_id": str(result.inserted_id),
+                "updated": False
+            }
+
+    except Exception as e:
+        print(f"❌ Error saving or updating user: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+
 # --------------------------------------------------------
 # MAIN AI FUNCTION
 # --------------------------------------------------------
@@ -220,6 +274,9 @@ async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
                     documents, 
                     response_text
                 )
+                
+                if application_id:
+                    await save_or_update_user(form_data["firstName"]+" "+form_data["lastName"], form_data["socialSecurityNumber"], application_id)
                 
                 return {
                     "success": True,
