@@ -1,11 +1,17 @@
-# api/ai/ai.py
-
 import os
 import base64
 import anthropic
 from dotenv import load_dotenv
 import re
 import json
+from datetime import datetime
+import uuid
+from bson import Binary
+import sys
+
+# Add parent directory to path to import connectDB
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from connectDB import db
 
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
 load_dotenv(dotenv_path)
@@ -27,6 +33,101 @@ def load_prompt() -> str:
         return "You are an AI that analyzes medical and income records for SSDI eligibility."
 
 # --------------------------------------------------------
+# Store documents in MongoDB GridFS or as Binary
+# --------------------------------------------------------
+async def store_documents_in_db(medical_bytes, income_bytes, medical_filename, income_filename):
+    """
+    Store PDF documents in MongoDB and return document references
+    """
+    try:
+        documents = []
+        
+        # Store medical records
+        medical_doc = {
+            "filename": medical_filename,
+            "content_type": "application/pdf",
+            "data": Binary(medical_bytes),
+            "uploaded_at": datetime.utcnow(),
+            "document_type": "medical_records"
+        }
+        medical_result = await db.documents.insert_one(medical_doc)
+        documents.append({
+            "document_id": str(medical_result),
+            "filename": medical_filename,
+            "document_type": "medical_records"
+        })
+        
+        # Store income documents
+        income_doc = {
+            "filename": income_filename,
+            "content_type": "application/pdf",
+            "data": Binary(income_bytes),
+            "uploaded_at": datetime.utcnow(),
+            "document_type": "income_documents"
+        }
+        income_result = await db.documents.insert_one(income_doc)
+        documents.append({
+            "document_id": str(income_result),
+            "filename": income_filename,
+            "document_type": "income_documents"
+        })
+        
+        return documents
+    except Exception as e:
+        print(f"❌ Error storing documents: {e}")
+        return []
+
+# --------------------------------------------------------
+# Save application to MongoDB
+# --------------------------------------------------------
+async def save_application_to_db(json_result, documents, raw_response):
+    """
+    Save the SSDI application analysis to MongoDB with required fields
+    """
+    try:
+        # Generate unique application ID
+        application_id = str(uuid.uuid4())
+        
+        # Prepare the document to insert
+        application_doc = {
+            "application_id": application_id,
+            "documents": documents,
+            "claude_confidence_level": json_result.get("confidence_level", 0),
+            "claude_summary": json_result.get("summary", ""),
+            "final_decision": json_result.get("recommendation", "UNKNOWN"),
+            
+            # Additional useful fields from the analysis
+            "personal_information": json_result.get("personal_information", {}),
+            "assessment_type": json_result.get("assessment_type", ""),
+            "assessment_date": json_result.get("assessment_date", ""),
+            "phase_1_current_work": json_result.get("phase_1_current_work", {}),
+            "phase_2_medical_severity": json_result.get("phase_2_medical_severity", {}),
+            "phase_3_listings": json_result.get("phase_3_listings", {}),
+            "phase_4_rfc": json_result.get("phase_4_rfc", {}),
+            "phase_5_vocational": json_result.get("phase_5_vocational", {}),
+            "overall_assessment": json_result.get("overall_assessment", {}),
+            "next_steps": json_result.get("next_steps", {}),
+            "evidence_summary": json_result.get("evidence_summary", {}),
+            
+            # Metadata
+            "created_at": datetime.utcnow(),
+            "raw_claude_response": raw_response,
+            "full_analysis": json_result
+        }
+        
+        # Insert into MongoDB
+        result = await db.applications.insert_one(application_doc)
+        
+        print(f"✅ Application saved to MongoDB with ID: {application_id}")
+        print(f"   MongoDB _id: {result}")
+        
+        return application_id
+        
+    except Exception as e:
+        print(f"❌ Error saving application to MongoDB: {e}")
+        return None
+
+# --------------------------------------------------------
 # MAIN AI FUNCTION
 # --------------------------------------------------------
 async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
@@ -34,6 +135,10 @@ async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
         # Read file contents
         medical_bytes = await medicalRecordsFile.read()
         income_bytes = await incomeDocumentsFile.read()
+        
+        # Get filenames
+        medical_filename = medicalRecordsFile.filename or "medical_records.pdf"
+        income_filename = incomeDocumentsFile.filename or "income_documents.pdf"
         
         # Load prompt
         prompt = load_prompt()
@@ -98,10 +203,29 @@ async def ai(form_data, medicalRecordsFile, incomeDocumentsFile):
             try:
                 jsonResult = json.loads(json_str)
                 print("✅ JSON parsed successfully")
+
+                # Store documents in MongoDB
+                print("\n📄 Storing documents in MongoDB...")
+                documents = await store_documents_in_db(
+                    medical_bytes, 
+                    income_bytes, 
+                    medical_filename, 
+                    income_filename
+                )
+                
+                # Save application to MongoDB
+                print("\n💾 Saving application to MongoDB...")
+                application_id = await save_application_to_db(
+                    jsonResult, 
+                    documents, 
+                    response_text
+                )
                 
                 return {
                     "success": True,
+                    "application_id": application_id,
                     "result": jsonResult,
+                    "documents": documents,
                     "raw_response": response_text
                 }
                 
