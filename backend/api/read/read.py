@@ -46,7 +46,7 @@ async def read(ssn: str):
         # Look up user
         user = await db.users.find_one({"socialSecurityNumber": ssn})
         if not user:
-            return {"success": False, "error": f"No user found with SSN {ssn}"}
+            return {"success": False, "error": f"No user found with socialSecurityNumber {ssn}"}
 
         # Collect all applications for this user
         app_ids = user.get("applications", [])
