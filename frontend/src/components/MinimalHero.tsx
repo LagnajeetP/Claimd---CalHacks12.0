@@ -122,6 +122,16 @@ function AnimatedNumbers() {
 }
 
 export default function MinimalHero() {
+  const [textGradient, setTextGradient] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTextGradient((prev) => (prev + 1) % 360);
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-white via-blue-50/30 to-white">
       {/* Light overlay for text contrast */}
@@ -143,7 +153,17 @@ export default function MinimalHero() {
       <div className="relative z-20 text-center px-6 pt-32 pb-20">
         {/* Logo/Brand */}
         <div className="mb-8">
-          <h1 className="text-5xl md:text-7xl font-thin tracking-tight mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 
+            className="text-5xl md:text-7xl font-thin tracking-tight mb-4"
+            style={{
+              background: `linear-gradient(${textGradient}deg, #3B82F6, #8B5CF6, #EC4899, #F59E0B, #3B82F6)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              backgroundSize: '200% 200%',
+              display: 'inline-block'
+            }}
+          >
             Claimd
           </h1>
         </div>
