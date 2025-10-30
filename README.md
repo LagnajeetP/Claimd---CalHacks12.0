@@ -46,7 +46,9 @@ Team: Lagnajeet Panigrahi, Angad Singh Josan, Sanjay Sundaram, Rohit Kulkarni, P
 Demo
 
 
-https://youtu.be/8iBx1phCm2o 
+[![Watch the demo](<img width="770" height="436" alt="image" src="https://github.com/user-attachments/assets/6c22113c-c6c8-4d35-b9d3-2330b9857be2" />
+)]([https://youtu.be/bgu5SqGYrdk](https://youtu.be/8iBx1phCm2o ))
+
 
 
 ### The Problem
