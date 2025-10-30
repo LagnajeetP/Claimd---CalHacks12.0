@@ -42,6 +42,13 @@ Claimd is an AI-powered platform that dramatically reduces SSDI application proc
 
 
 Team: Lagnajeet Panigrahi, Angad Singh Josan, Sanjay Sundaram, Rohit Kulkarni, Praneeth Otthi
+
+Demo
+
+
+https://youtu.be/8iBx1phCm2o 
+
+
 ### The Problem
 
 - **940,000 Americans** are currently waiting for SSDI claim decisions
